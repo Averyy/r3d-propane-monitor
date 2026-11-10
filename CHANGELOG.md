@@ -1,5 +1,7 @@
 # Changelog
 
+Release tags start at v1.0 and are numbered separately from the board and gauge tip revisions. v1.0, the first release, has sensor board v4, two-piece gauge tip v2, one-piece gauge tip v1, the generic module housing and the first ESPHome configuration.
+
 ## Sensor board
 
 ### v4 (2026-11-08)
@@ -38,7 +40,7 @@ Gauge reader and cap for a generic 23 × 23 mm AS5600 module, located by four pi
 
 ## ESPHome configuration
 
-### First version (unreleased)
+### v1.0 (unreleased)
 
 - `propane-monitor.yaml` package: AS5600 on I²C (GPIO8/GPIO9, 100 kHz), angle as the median of 10 readings, tank level from the dial tables, Sensor problem flag.
 - Dial type and angle offset set from Home Assistant and kept across reboots.

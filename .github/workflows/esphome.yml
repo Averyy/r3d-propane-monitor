@@ -29,7 +29,7 @@ jobs:
       # this commit's package instead, with throwaway secrets.
       - working-directory: esphome
         run: |
-          sed 's|github://Averyy/r3d-propane-monitor/esphome/\(propane-monitor[a-z-]*\.yaml\)@v4\.0|!include \1|' example.yaml > example-local.yaml
+          sed 's|github://Averyy/r3d-propane-monitor/esphome/\(propane-monitor[a-z-]*\.yaml\)@v[0-9][0-9.]*|!include \1|' example.yaml > example-local.yaml
           grep -q '!include propane-monitor.yaml' example-local.yaml
           sed "s|^api_encryption_key: .*|api_encryption_key: \"$(openssl rand -base64 32)\"|" secrets.yaml.example > secrets.yaml
           uvx esphome config example-local.yaml
