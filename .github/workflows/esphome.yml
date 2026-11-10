@@ -1,0 +1,51 @@
+name: ESPHome
+
+on:
+  push:
+    branches: [main]
+    paths: ["esphome/**", "docs/calibration.md", ".github/workflows/esphome.yml"]
+  pull_request:
+    paths: ["esphome/**", "docs/calibration.md", ".github/workflows/esphome.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  dial-tables:
+    name: Dial tables match calibration.md
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - run: python3 esphome/tests/tank_level_test.py
+
+  example:
+    name: example.yaml validates
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.3.3
+      # example.yaml pulls the package from a release tag; check it against
+      # this commit's package instead, with throwaway secrets.
+      - working-directory: esphome
+        run: |
+          sed 's|github://Averyy/r3d-propane-monitor/esphome/\(propane-monitor[a-z-]*\.yaml\)@v4\.0|!include \1|' example.yaml > example-local.yaml
+          grep -q '!include propane-monitor.yaml' example-local.yaml
+          sed "s|^api_encryption_key: .*|api_encryption_key: \"$(openssl rand -base64 32)\"|" secrets.yaml.example > secrets.yaml
+          uvx esphome config example-local.yaml
+
+  build:
+    name: Build ${{ matrix.config }} (ESPHome ${{ matrix.version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        config: [always-on, battery]
+        # The package's min_version, and the current release.
+        version: ["2026.9.1", latest]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: esphome/build-action@v8.1.0
+        with:
+          yaml-file: esphome/tests/${{ matrix.config }}.yaml
+          version: ${{ matrix.version }}

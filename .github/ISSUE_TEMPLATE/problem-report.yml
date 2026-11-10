@@ -1,0 +1,77 @@
+name: Problem report
+description: Something doesn't work or reads wrong.
+title: "[Problem]: "
+labels: ["problem"]
+body:
+  - type: markdown
+    attributes:
+      value: Check [troubleshooting](https://github.com/Averyy/r3d-propane-monitor/blob/main/docs/troubleshooting.md) first.
+  - type: input
+    id: board
+    attributes:
+      label: Sensor board revision
+      description: Printed on the underside, for example "AS5600 v4".
+      placeholder: v4
+    validations:
+      required: true
+  - type: dropdown
+    id: tip
+    attributes:
+      label: Gauge tip version
+      options:
+        - Two-piece
+        - One-piece
+        - Not fitted
+    validations:
+      required: true
+  - type: dropdown
+    id: dial
+    attributes:
+      label: Dial type
+      options:
+        - Jr/Sr Horizontal
+        - Jr/Sr Vertical
+        - Jr/Sr Fractional
+        - 8" Magnetel
+        - 4" Magnetel
+        - Drop-In
+        - Default
+        - Not sure
+    validations:
+      required: true
+  - type: dropdown
+    id: mode
+    attributes:
+      label: ESPHome configuration
+      options:
+        - Standard (always awake)
+        - Battery mode
+        - My own changes
+    validations:
+      required: true
+  - type: input
+    id: esp
+    attributes:
+      label: ESP32-S3 board and ESPHome version
+      placeholder: "ESP32-S3-DevKitC-1, ESPHome 2026.9.1"
+    validations:
+      required: true
+  - type: input
+    id: readings
+    attributes:
+      label: Readings in Home Assistant
+      description: Tank level, Sensor problem, Angle, Magnet status and Gain, and what the dial shows.
+      placeholder: "tank level 37 %, no problem, angle 150°, status 4, gain 60, dial shows 40 %"
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you expected, what you saw, and what you've tried.
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: ESPHome log
+      description: Remove Wi-Fi passwords and keys before pasting.
+      render: text

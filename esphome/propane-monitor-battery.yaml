@@ -1,0 +1,129 @@
+# R3D propane monitor: battery mode. Add this package after propane-monitor.yaml.
+# https://github.com/Averyy/r3d-propane-monitor
+#
+# Wakes every 8 hours, takes 10 readings 1 s apart, reports the median to Home
+# Assistant and goes back to deep sleep. A device asleep can't take updates or
+# show live readings, so it stays awake:
+#   - for 15 minutes after power-on, reset or flashing (not after a timed wake);
+#   - while the Home Assistant helper named below is on (setup mode). Create a
+#     Toggle helper with that entity ID; the device checks it on every wake.
+#
+# The sensor is switched off while the ESP32 sleeps: wire board pin 2 (3V3) to
+# the GPIO below instead of 3.3 V. It powers the sensor directly (at most about
+# 8 mA). Left on 3.3 V, the sensor stays powered and draws about 1.5 mA asleep.
+#
+# Licensed under GPLv3, see LICENSE in this folder.
+
+substitutions:
+  propane_sleep_duration: 8h
+  propane_setup_window: 15min
+  propane_setup_mode_entity: input_boolean.propane_monitor_setup_mode
+  # GPIO number that powers the sensor (board pin 2). It must hold its level in
+  # deep sleep, so one of GPIO1-21, but not 3 (strapping) or 19/20 (USB).
+  propane_sensor_power_gpio: "7"
+
+esphome:
+  on_boot:
+    # Sensor power on before the I²C bus (priority 1000) and the sensor (600)
+    # set up, so neither talks to an unpowered chip. The switch below sets up
+    # later (and keeps the pin high), so this drives the pin directly.
+    - priority: 1100
+      then:
+        - lambda: |-
+            constexpr int kPin = ${propane_sensor_power_gpio};
+            static_assert(kPin >= 1 && kPin <= 21 && kPin != 3 && kPin != 19 && kPin != 20,
+                          "propane_sensor_power_gpio must be GPIO1-21, not 3, 19 or 20");
+            const auto pin = static_cast<gpio_num_t>(kPin);
+            gpio_hold_dis(pin);  // held low through the last deep sleep
+            gpio_set_direction(pin, GPIO_MODE_OUTPUT);
+            gpio_set_drive_capability(pin, GPIO_DRIVE_CAP_3);
+            gpio_set_level(pin, 1);
+            delay(20);  // AS5600 power-up time is at most 10 ms
+    - priority: -100
+      then:
+        - script.execute: propane_sleep_cycle
+
+# Without Home Assistant or Wi-Fi the device should sleep, not reboot and start
+# another setup window.
+api:
+  reboot_timeout: 0s
+
+wifi:
+  reboot_timeout: 0s
+
+# Sensor power, board pin 2. Declared as a switch so ESPHome checks the pin
+# (not used twice, not a strapping or flash pin). On from boot; only the sleep
+# cycle below turns it off.
+switch:
+  - platform: gpio
+    id: propane_sensor_power
+    internal: true
+    restore_mode: ALWAYS_ON
+    pin:
+      number: GPIO${propane_sensor_power_gpio}
+      drive_strength: 40mA
+
+deep_sleep:
+  id: propane_deep_sleep
+  sleep_duration: ${propane_sleep_duration}
+
+globals:
+  - id: propane_setup_window_done
+    type: bool
+    initial_value: "false"
+
+binary_sensor:
+  - platform: homeassistant
+    id: propane_setup_mode
+    entity_id: ${propane_setup_mode_entity}
+    internal: true
+    # Setup mode turned off while awake: finish the cycle and sleep.
+    on_release:
+      - if:
+          condition:
+            lambda: return id(propane_setup_window_done);
+          then:
+            - script.execute: propane_sleep_cycle
+
+script:
+  - id: propane_sleep_cycle
+    mode: restart
+    then:
+      - if:
+          condition:
+            lambda: |-
+              return !id(propane_setup_window_done) &&
+                     esp_sleep_get_wakeup_cause() != ESP_SLEEP_WAKEUP_TIMER;
+          then:
+            - logger.log: "Power-on or reset: staying awake for ${propane_setup_window}"
+            - delay: ${propane_setup_window}
+      - globals.set:
+          id: propane_setup_window_done
+          value: "true"
+      # Wait for a reading (or a sensor problem) and for Home Assistant. Only a
+      # client subscribed to states counts: a log viewer alone isn't enough.
+      - wait_until:
+          condition:
+            and:
+              - api.connected:
+                  state_subscription_only: true
+              - lambda: |-
+                  return id(propane_tank_level).has_state() ||
+                         id(propane_sensor_problem).state;
+          timeout: 60s
+      # Give Home Assistant time to store the readings and send setup mode.
+      - delay: 5s
+      - if:
+          condition:
+            binary_sensor.is_on: propane_setup_mode
+          then:
+            - logger.log: "Setup mode is on in Home Assistant: staying awake"
+          else:
+            - logger.log: "Sleeping for ${propane_sleep_duration}"
+            # Stop reading the sensor, then switch it off and hold the pin low
+            # through deep sleep. Reads of an unpowered sensor would otherwise
+            # report a sensor problem while Home Assistant is still connected.
+            - component.suspend: propane_angle
+            - switch.turn_off: propane_sensor_power
+            - lambda: gpio_hold_en(static_cast<gpio_num_t>(${propane_sensor_power_gpio}));
+            - deep_sleep.enter: propane_deep_sleep

@@ -1,0 +1,45 @@
+# R3D propane monitor: example device configuration.
+# https://github.com/Averyy/r3d-propane-monitor
+#
+# Copy this into a new device in ESPHome Device Builder (or next to a
+# secrets.yaml, see secrets.yaml.example), set your board, and install.
+
+substitutions:
+  name: propane-monitor
+  friendly_name: Propane monitor
+  # Optional: I²C pins if your board can't use GPIO8 (SDA) and GPIO9 (SCL).
+  # propane_sda_pin: GPIO8
+  # propane_scl_pin: GPIO9
+
+esphome:
+  name: ${name}
+  friendly_name: ${friendly_name}
+
+esp32:
+  # Any ESP32-S3 board. Use your board's ID if ESPHome lists it.
+  board: esp32-s3-devkitc-1
+
+logger:
+
+api:
+  encryption:
+    key: !secret api_encryption_key
+
+ota:
+  - platform: esphome
+    password: !secret ota_password
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  # Fallback hotspot if the device can't join your Wi-Fi. Its page can change
+  # the Wi-Fi settings, so it needs a password.
+  ap:
+    password: !secret fallback_ap_password
+
+captive_portal:
+
+packages:
+  propane_monitor: github://Averyy/r3d-propane-monitor/esphome/propane-monitor.yaml@v4.0
+  # Battery builds: also add this line (see esphome/README.md first).
+  # propane_monitor_battery: github://Averyy/r3d-propane-monitor/esphome/propane-monitor-battery.yaml@v4.0

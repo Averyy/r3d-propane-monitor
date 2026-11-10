@@ -1,0 +1,8 @@
+# ESPHome
+.esphome/
+secrets.yaml
+# ESPHome writes its own .gitignore next to each config it compiles
+esphome/**/.gitignore
+
+# OS
+.DS_Store

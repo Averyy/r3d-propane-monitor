@@ -1,0 +1,11 @@
+# Binary files: never diff or convert line endings
+*.stl binary
+*.zip binary
+*.png binary
+*.pdf binary
+
+# Board 3D models are large generated text; keep them out of diffs and language stats
+*.step -diff linguist-generated
+
+# JLCPCB BOM and pick-and-place are UTF-16 with CRLF; upload them byte for byte
+sensor-board/fabrication/*.csv binary

@@ -1,0 +1,241 @@
+# R3D propane monitor: ESPHome package for the AS5600 sensor board.
+# https://github.com/Averyy/r3d-propane-monitor
+#
+# Include this from your device configuration (see example.yaml). It reads the
+# sensor board on I²C and gives Home Assistant the tank level, with the dial
+# type and an angle offset settable from Home Assistant.
+#
+# Licensed under GPLv3, see LICENSE in this folder.
+
+substitutions:
+  # Override any of these in your own configuration's substitutions.
+  propane_sda_pin: GPIO8
+  propane_scl_pin: GPIO9
+  propane_i2c_frequency: 100kHz
+
+esphome:
+  min_version: 2026.9.1
+
+# A list item, so that an i2c: list in your own configuration adds a second bus.
+# An i2c: section without a dash replaces this one and validation then stops at
+# "Couldn't find ID 'propane_i2c'" (see esphome/README.md, Settings).
+i2c:
+  - id: propane_i2c
+    sda: ${propane_sda_pin}
+    scl: ${propane_scl_pin}
+    frequency: ${propane_i2c_frequency}
+    # The sensor board has its own 4.7 kΩ pull-ups.
+    sda_pullup_enabled: false
+    scl_pullup_enabled: false
+    # Logs the devices found at boot; the sensor is 0x36.
+    scan: true
+
+as5600:
+  id: propane_as5600
+  i2c_id: propane_i2c
+  # Low-power mode 3, as on the device the dial tables were measured with.
+  # The chip then updates its angle every 100 ms, faster than it is read here.
+  power_mode: low3
+  # DIR is wired to 3V3 on the board (the angle rises counter-clockwise), so
+  # there is no dir_pin. No start or end position: the full 0-360° range,
+  # which the dial tables assume.
+
+globals:
+  # millis() of the last successful angle read, for the sensor problem check.
+  - id: propane_last_read_ms
+    type: uint32_t
+    initial_value: "0"
+
+sensor:
+  - platform: as5600
+    id: propane_angle
+    as5600_id: propane_as5600
+    name: Angle
+    entity_category: diagnostic
+    unit_of_measurement: "°"
+    accuracy_decimals: 1
+    icon: mdi:gauge
+    # Once a second. The median of 10, the Sensor problem timings (30 s, 3 s,
+    # 12 s) and battery mode's waits all assume this; change them together.
+    update_interval: 1s
+    filters:
+      # The AS5600 reports counts (0-4095); the dial tables are in degrees.
+      - lambda: return x * as5600::RAW_TO_DEGREES;
+      - median:
+          window_size: 10
+          send_every: 10
+          send_first_at: 10
+      # Report a real change straight away, otherwise every 5 minutes.
+      - or:
+          - throttle: 5min
+          - delta: 0.5
+    on_raw_value:
+      - lambda: id(propane_last_read_ms) = millis();
+    on_value:
+      - component.update: propane_tank_level
+
+    # STATUS bits 5-3: 4 = magnet detected, in range; 6 = detected, weak;
+    # 5 = detected, too strong; 2 = not detected; 0 = no reply.
+    status:
+      id: propane_magnet_status
+      name: Magnet status
+      filters:
+        - or:
+            - throttle: 5min
+            - delta: 0.5
+
+    # Automatic gain, 0-128 with the board's 3.3 V supply. Best near the middle.
+    gain:
+      id: propane_gain
+      name: Gain
+      filters:
+        - median:
+            window_size: 10
+            send_every: 10
+            send_first_at: 10
+        - or:
+            - throttle: 5min
+            - delta: 2
+
+    magnitude:
+      id: propane_magnitude
+      name: Magnitude
+      disabled_by_default: true
+      filters:
+        - median:
+            window_size: 10
+            send_every: 10
+            send_first_at: 10
+        - or:
+            - throttle: 5min
+            - delta: 20
+
+  - platform: template
+    id: propane_tank_level
+    name: Tank level
+    unit_of_measurement: "%"
+    accuracy_decimals: 0
+    icon: mdi:propane-tank
+    state_class: measurement
+    update_interval: never
+    lambda: |-
+      // Angle (degrees) at each printed mark, per dial type: {percent, angle}.
+      // docs/calibration.md mirrors these tables.
+      struct Point { float pct; float deg; };
+      static const Point kHorizontal[] = {
+          {5, 37}, {10, 63}, {20, 105}, {30, 134}, {40, 160}, {50, 183},
+          {60, 200}, {70, 229}, {80, 258}, {90, 296}, {95, 322}};
+      static const Point kVertical[] = {
+          {0, 37}, {10, 57}, {20, 74}, {30, 111}, {40, 148}, {50, 185},
+          {60, 222}, {70, 259}, {80, 302}, {100, 322}};
+      static const Point kFractional[] = {
+          {0, 37}, {25, 108}, {50, 179}, {75, 250}, {100, 322}};
+      static const Point kMagnetel8[] = {
+          {3, 37}, {5, 45}, {10, 63}, {20, 95}, {30, 126}, {40, 158}, {50, 189},
+          {60, 221}, {70, 252}, {80, 274}, {90, 296}, {95, 309}, {97, 322}};
+      static const Point kDropIn[] = {
+          {10, 37}, {20, 68}, {30, 99}, {40, 130}, {50, 161}, {60, 192},
+          {70, 223}, {80, 254}, {90, 285}, {94, 322}};
+      static const Point kDefault[] = {
+          {0, 35.288f}, {5, 43.374f}, {10, 67.675f}, {15, 89.824f},
+          {20, 107.753f}, {25, 120.761f}, {30, 135.043f}, {40, 160.532f},
+          {50, 181.977f}, {60, 202.28f}, {70, 226.538f}, {80, 253.74f},
+          {90, 296.586f}, {95, 323.964f}};
+      struct Table { const Point *pts; size_t n; };
+      #define PROPANE_TABLE(t) Table{t, sizeof(t) / sizeof(t[0])}
+      // Same order as the Dial type options. 4" Magnetel uses the
+      // Jr/Sr Horizontal table.
+      static const Table kTables[] = {
+          PROPANE_TABLE(kHorizontal), PROPANE_TABLE(kVertical),
+          PROPANE_TABLE(kFractional), PROPANE_TABLE(kMagnetel8),
+          PROPANE_TABLE(kHorizontal), PROPANE_TABLE(kDropIn),
+          PROPANE_TABLE(kDefault)};
+      #undef PROPANE_TABLE
+
+      // No reading yet: publish nothing. Sensor problem: unknown.
+      if (!id(propane_angle).has_state()) return {};
+      if (id(propane_sensor_problem).state) return NAN;
+      const auto index = id(propane_dial_type).active_index();
+      if (!index.has_value() || *index >= sizeof(kTables) / sizeof(kTables[0])) return NAN;
+      const Table &t = kTables[*index];
+      const float angle = id(propane_angle).state + id(propane_angle_offset).state;
+
+      // Clamp to the table's ends; interpolate linearly between marks.
+      if (angle <= t.pts[0].deg) return t.pts[0].pct;
+      if (angle >= t.pts[t.n - 1].deg) return t.pts[t.n - 1].pct;
+      for (size_t i = 1; i < t.n; i++) {
+        const Point &lo = t.pts[i - 1];
+        const Point &hi = t.pts[i];
+        if (angle <= hi.deg) {
+          return lo.pct + (angle - lo.deg) * (hi.pct - lo.pct) / (hi.deg - lo.deg);
+        }
+      }
+      return NAN;
+
+binary_sensor:
+  - platform: template
+    id: propane_sensor_problem
+    name: Sensor problem
+    device_class: problem
+    lambda: |-
+      // Not found at boot: the as5600 component gives up until a restart.
+      if (id(propane_as5600).is_failed()) return true;
+      // No angle read for 30 s, counted from boot until the first one: the
+      // sensor stopped answering. Unsigned subtraction survives millis() wrapping.
+      if (millis() - id(propane_last_read_ms) > 30000) return true;
+      // Magnet missing (MD clear), too strong (MH set) or no reply (0).
+      const float status = id(propane_magnet_status).get_raw_state();
+      if (std::isnan(status)) return false;
+      const int s = static_cast<int>(status);
+      return (s & 4) == 0 || (s & 1) != 0;
+    filters:
+      # Ignore a single bad read; clear only after a fresh angle median.
+      - delayed_on: 3s
+      - delayed_off: 12s
+    on_state:
+      - component.update: propane_tank_level
+
+select:
+  - platform: template
+    id: propane_dial_type
+    name: Dial type
+    entity_category: config
+    icon: mdi:gauge
+    # The order matches the tables in Tank level, and the stored choice is
+    # its position: add new dial types at the end only.
+    options:
+      - Jr/Sr Horizontal
+      - Jr/Sr Vertical
+      - Jr/Sr Fractional
+      - '8" Magnetel'
+      - '4" Magnetel'
+      - Drop-In
+      - Default
+    initial_option: Default
+    optimistic: true
+    restore_value: true
+    on_value:
+      - component.update: propane_tank_level
+
+number:
+  - platform: template
+    id: propane_angle_offset
+    name: Angle offset
+    entity_category: config
+    icon: mdi:angle-acute
+    unit_of_measurement: "°"
+    mode: box
+    min_value: -30
+    max_value: 30
+    step: 0.5
+    initial_value: 0
+    optimistic: true
+    restore_value: true
+    on_value:
+      - component.update: propane_tank_level
+
+button:
+  # The sensor is only set up at boot; after reconnecting it, restart.
+  - platform: restart
+    id: propane_restart
+    name: Restart

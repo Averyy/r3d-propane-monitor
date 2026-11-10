@@ -1,0 +1,37 @@
+name: Dial table
+description: Share an angle table for a dial type, or a correction to one.
+title: "[Dial table]: "
+labels: ["dial table"]
+body:
+  - type: input
+    id: dial
+    attributes:
+      label: Dial type and printed marks
+      description: The gauge make and model if you know them, and the marks printed on the dial.
+      placeholder: "Jr/Sr Horizontal, 5 % to 95 %"
+    validations:
+      required: true
+  - type: textarea
+    id: table
+    attributes:
+      label: Measured table
+      description: One line per printed mark, the percentage and the angle the sensor reported.
+      placeholder: |
+        5, 37
+        10, 63
+        20, 105
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: how
+    attributes:
+      label: How you measured it
+      description: Gauge tip version, and whether readings came from a live tank or a spare gauge.
+    validations:
+      required: true
+  - type: textarea
+    id: photo
+    attributes:
+      label: Photo of the dial face
+      description: Drag an image here if you can.

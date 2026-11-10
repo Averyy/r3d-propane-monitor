@@ -1,0 +1,23 @@
+# Build test: example.yaml with both local packages and placeholder secrets.
+# CI compiles this; it is not meant for a real device.
+
+esphome:
+  name: propane-monitor-test
+
+esp32:
+  board: esp32-s3-devkitc-1
+
+logger:
+
+api:
+
+ota:
+  - platform: esphome
+
+wifi:
+  ssid: test-network
+  password: test-password
+
+packages:
+  propane_monitor: !include ../propane-monitor.yaml
+  propane_monitor_battery: !include ../propane-monitor-battery.yaml
