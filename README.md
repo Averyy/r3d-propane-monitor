@@ -3,11 +3,11 @@
 [![ESPHome build](https://github.com/Averyy/r3d-propane-monitor/actions/workflows/esphome.yml/badge.svg)](https://github.com/Averyy/r3d-propane-monitor/actions/workflows/esphome.yml)
 
 > [!WARNING]
-> **For reference only.** This is a hobby design, not a certified product. It isn't certified for hazardous locations and isn't intrinsically safe, and the area around a propane tank can be one. You are responsible for building, installing and operating it safely and legally. Use it at your own risk; see [Legal](#legal).
+> **For reference only.** This is a hobby design with no certification of any kind, including for hazardous locations, and it isn't intrinsically safe. The area around a propane tank can be a hazardous location. You're responsible for building, installing and operating it safely and legally. Use it at your own risk; see [Legal](#legal).
 
 A small sensor that reads the dial of a Remote Ready (R3D) propane tank gauge and reports the tank level to Home Assistant through an ESP32-S3 running ESPHome. No subscription, no cloud service.
 
-Remote Ready gauges turn a magnet behind the dial as the float moves. A 20 × 10 mm board with an AS5600 magnetic angle sensor sits in a printed gauge tip that clips onto the dial, reads that magnet's angle, and sends it over I²C to the ESP32-S3. ESPHome converts the angle to a percentage using a table for your dial type.
+Remote Ready gauges turn a magnet behind the dial as the float moves. A 20 × 10 mm board with an AS5600 magnetic angle sensor sits in a printed gauge tip that clips onto the dial. The sensor reads the magnet's angle and sends it over I²C to the ESP32-S3, and ESPHome turns that into a percentage using a table for your dial type.
 
 Free for non-commercial use under CC BY-NC-SA 4.0. Order your own boards and print your own gauge tip. Changed versions must be shared under the same licence, and selling boards or files isn't allowed.
 
@@ -18,6 +18,7 @@ Free for non-commercial use under CC BY-NC-SA 4.0. Order your own boards and pri
 - An earlier board revision with the same AS5600 sensor was built and worked for the author.
 - The current board, v4, hasn't been built yet. Its files pass the software checks listed in [sensor-board/](sensor-board/README.md#what-has-been-checked), but those don't prove it works.
 - Both gauge tip versions have been printed and worked for the author.
+- The [generic module housing](module-cap/README.md) has been printed and worked well in the author's testing.
 - The ESPHome configuration compiles and passes its checks, but hasn't been run on a v4 board yet. Battery mode hasn't been run on hardware.
 
 ## Will it fit my gauge?
@@ -28,7 +29,7 @@ You need a Remote Ready (R3D) dial: the gauge tip clips onto it. The angle table
 
 | Item | Notes |
 |---|---|
-| Sensor boards | Ordered from JLCPCB with the parts fitted, about US$25 for 5 before shipping ([cost](sensor-board/README.md#cost)). No soldering |
+| Sensor boards | Ordered from JLCPCB with the parts fitted, about US$25 for 5 before shipping ([cost](sensor-board/README.md#cost)). No soldering. Or a generic AS5600 module: [option below](#option-generic-as5600-module) |
 | Gauge tip | 3D printed in ASA, ABS or TPU: two-piece (snaps together) or one-piece (filled with glue) |
 | Cable | Any generic Qwiic / STEMMA QT cable (4-pin JST SH, 1.00 mm pitch) |
 | ESP32-S3 board | Any ESP32-S3 board that runs ESPHome. Its power supply (USB, or battery with [battery mode](esphome/README.md#battery-mode)) and outdoor housing are your choice |
@@ -61,15 +62,21 @@ Problems: [troubleshooting](docs/troubleshooting.md).
 | 3 | SDA | GPIO8 |
 | 4 | SCL | GPIO9 |
 
-- **3.3 V only.** Some Qwiic / STEMMA QT ports supply 5 V. The sensor needs 3.0–3.6 V and can be permanently damaged above 4.0 V.
+- Use **3.3 V only**. Some Qwiic / STEMMA QT ports supply 5 V, and the sensor needs 3.0–3.6 V. Above 4.0 V it can be permanently damaged.
 - The board has its own 4.7 kΩ pull-ups on SDA and SCL, so the ESP32-S3 side doesn't need any. Run the bus at 100 kHz or less.
 - Battery builds wire board pin 2 to GPIO7 instead of 3.3 V, so the ESP32 can switch the sensor off while it sleeps ([battery mode](esphome/README.md#battery-mode)).
 - Wire by pin number only. Cable colours vary between suppliers and don't tell you which pin is which. The underside of the board is labelled SCL, SDA, 3V3 and GND next to the connector.
 
+## Option: generic AS5600 module
+
+Instead of ordering the custom board, you can use a generic AS5600 breakout board, the kind sold for Arduino projects, in a larger printed housing. It clips onto the same dial, and the wiring and ESPHome configuration don't change. Tie the module's DIR pad to VCC and solder the cable straight to its pads. Files, printing and assembly: [module-cap/](module-cap/README.md).
+
+<img src="module-cap/images/module-cap-exploded.png" alt="Generic module housing: gauge reader, module and cap" width="420">
+
 ## Modifying
 
-- **Included:** the board's 3D model and dimension drawing, schematic (PDF) and fabrication files in [sensor-board/](sensor-board/README.md); the gauge tip STLs in [gauge-tip/](gauge-tip/README.md); the dial angle tables in [docs/calibration.md](docs/calibration.md).
-- **Not included:** the board's EasyEDA project and the gauge tip's CAD source.
+- The repo has the board's 3D model and dimension drawing, schematic (PDF) and fabrication files in [sensor-board/](sensor-board/README.md), the STLs in [gauge-tip/](gauge-tip/README.md) and [module-cap/](module-cap/README.md), and the dial angle tables in [docs/calibration.md](docs/calibration.md).
+- It doesn't have the board's EasyEDA project or the CAD sources for the gauge tip and module housing.
 - Changing the ESPHome configuration: [esphome/](esphome/README.md#changing-the-configuration) and the [firmware notes](docs/firmware-notes.md).
 - Sharing a table for a new dial type, or other changes: [CONTRIBUTING.md](CONTRIBUTING.md).
 
@@ -80,8 +87,9 @@ Problems: [troubleshooting](docs/troubleshooting.md).
 | [docs/](docs/README.md) | Build guide, dial types and calibration, troubleshooting, firmware notes |
 | [sensor-board/](sensor-board/README.md) | Specifications, JLCPCB ordering files and cost, schematic, 3D model, pictures |
 | [gauge-tip/](gauge-tip/README.md) | STL files for both versions, printing, assembly |
+| [module-cap/](module-cap/README.md) | Option: housing for a generic AS5600 module, STLs, wiring, assembly |
 | [esphome/](esphome/README.md) | ESPHome configuration (GPLv3): install, entities, settings, battery mode |
-| [CHANGELOG.md](CHANGELOG.md) | Board, gauge tip and configuration revisions |
+| [CHANGELOG.md](CHANGELOG.md) | Board, gauge tip, module housing and configuration revisions |
 
 ## Legal
 
@@ -94,7 +102,7 @@ This is a hobby project, shared for information only.
 
 ## Licence
 
-Copyright 2026 Averyy. The sensor board, gauge tip and documentation are licensed under [CC BY-NC-SA 4.0](LICENSE). For commercial use, ask the author.
+Copyright 2026 Averyy. The sensor board, gauge tip, module housing and documentation are licensed under [CC BY-NC-SA 4.0](LICENSE). For commercial use, ask the author.
 
 The ESPHome configuration in [esphome/](esphome/README.md) is licensed under [GPLv3](esphome/LICENSE), because it compiles together with ESPHome's GPLv3 code.
 

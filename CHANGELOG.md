@@ -30,6 +30,12 @@ Tip plus a snap-in cable piece that holds the board forward and anchors the cabl
 
 Same outside shape and length as the assembled two-piece, with an open well behind the board that is filled with waterproof, PCB-safe glue. Printed, glue-filled and worked for the author.
 
+## Generic module housing
+
+### First version (2026-11-10)
+
+Gauge reader and cap for a generic 23 × 23 mm AS5600 module, located by four pins. The module sits chip side down; the cable wires are soldered to its pads and DIR is tied to VCC. Printed and worked well in the author's testing.
+
 ## ESPHome configuration
 
 ### First version (unreleased)

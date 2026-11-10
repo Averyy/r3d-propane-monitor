@@ -13,7 +13,7 @@ Open a **Problem report** issue. Include the board revision, gauge tip version, 
 ## Change files
 
 - Docs and the ESPHome configuration: send a pull request. For `esphome/` changes, run the checks in [esphome/README.md](esphome/README.md#changing-the-configuration); CI runs them too. A dial table change goes in both `esphome/propane-monitor.yaml` and `docs/calibration.md`.
-- The board's EasyEDA project and the gauge tip's CAD source aren't published, so for board or tip changes, open an issue describing the change.
+- The board's EasyEDA project and the CAD sources of the gauge tip and module housing aren't published, so for board or housing changes, open an issue describing the change.
 - Wiring is documented by pin number only (1 GND, 2 3V3, 3 SDA, 4 SCL), never by wire colour.
 
 ## Licence of contributions

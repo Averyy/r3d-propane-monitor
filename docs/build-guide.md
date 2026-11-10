@@ -10,6 +10,8 @@ You need a Remote Ready (R3D) dial on your tank gauge: the gauge tip clips onto 
 
 Order from JLCPCB with the parts fitted, following [sensor board → Ordering](../sensor-board/README.md#ordering). The minimum order is 5 boards ([cost](../sensor-board/README.md#cost)). No soldering is needed.
 
+Or use a generic AS5600 module instead of the custom board: [module-cap/](../module-cap/README.md) covers its housing, preparation and wiring. The steps below still apply, with the module housing in place of the gauge tip.
+
 ## 3. Print the gauge tip
 
 Choose a version ([gauge tip](../gauge-tip/README.md)):

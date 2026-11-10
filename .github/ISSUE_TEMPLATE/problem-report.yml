@@ -10,17 +10,18 @@ body:
     id: board
     attributes:
       label: Sensor board revision
-      description: Printed on the underside, for example "AS5600 v4".
+      description: Printed on the underside, for example "AS5600 v4", or "generic module".
       placeholder: v4
     validations:
       required: true
   - type: dropdown
     id: tip
     attributes:
-      label: Gauge tip version
+      label: Gauge tip or housing
       options:
         - Two-piece
         - One-piece
+        - Generic module housing
         - Not fitted
     validations:
       required: true
