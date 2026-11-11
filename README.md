@@ -7,7 +7,7 @@
 
 A small sensor that clips onto the dial of a Remote Ready (R3D) propane tank gauge and reports the tank level to Home Assistant. An ESP32-S3 running ESPHome does the work, so there's no cloud service and no subscription.
 
-![Two-piece gauge tip clipped onto a Jr/Sr Horizontal dial](docs/images/hero.jpg)
+![3D render of the sensor board, left, and the gauge tip, right](docs/images/board-and-tip-render.png)
 
 Remote Ready gauges turn a magnet behind the dial as the float moves. A 20 × 10 mm board with an AS5600 magnetic angle sensor sits in a printed gauge tip that clips onto the dial. The sensor reads the magnet's angle and sends it over I²C to the ESP32-S3, and ESPHome turns the angle into a percentage using a table for your dial type.
 
@@ -34,8 +34,6 @@ Match yours by its printed marks in [dial types](docs/calibration.md#pick-your-d
 
 ## What you need
 
-<img src="docs/images/board-and-tip-render.png" alt="3D render of the sensor board, left, and the gauge tip, right" width="640">
-
 | Item | Notes |
 |---|---|
 | Sensor boards | Ordered from JLCPCB with the parts fitted, about US$25 for 5 before shipping ([cost](sensor-board/README.md#cost)). No soldering. Or use a generic AS5600 module: [option below](#option-generic-as5600-module) |
@@ -45,11 +43,19 @@ Match yours by its printed marks in [dial types](docs/calibration.md#pick-your-d
 | Home Assistant with ESPHome | [ESPHome: getting started](https://esphome.io/install/getting-started/) |
 | Waterproof, PCB-safe glue | Seals either gauge tip version |
 
+## Option: generic AS5600 module
+
+You can skip the custom board and use a generic AS5600 breakout board, the kind sold for Arduino projects, in a larger printed housing. It clips onto the same dial, and the wiring and ESPHome configuration don't change. Tie the module's DIR pad to VCC and solder the cable straight to its pads. Files, printing and assembly are in [module-cap/](module-cap/README.md).
+
+<img src="module-cap/images/module-cap-exploded.png" alt="Generic module housing: gauge reader, module and cap" width="420">
+
 ## Build
 
 Follow the [build guide](docs/build-guide.md). The short version: order the boards, print the gauge tip, wire the board to the ESP32-S3 as in the table below and flash ESPHome. Then plug the cable into the board, slide the board into the tip and clip it onto the dial with no glue yet. Check the reading in Home Assistant against the dial, and seal the tip only once it's right. The board can't come out after that.
 
-<img src="gauge-tip/images/gauge-tip-on-dial-cable-end.jpg" alt="Back of the gauge tip on a dial, with the cable plugged into the board inside" width="320">
+| Printed two-piece tip on a Jr/Sr Horizontal dial | From the back: the cable plugged into the board |
+|---|---|
+| ![Two-piece gauge tip clipped onto a Jr/Sr Horizontal dial](docs/images/hero.jpg) | ![Back of the gauge tip on a dial, with the cable plugged into the board inside](gauge-tip/images/gauge-tip-on-dial-cable-end.jpg) |
 
 If something's off, see [troubleshooting](docs/troubleshooting.md).
 
@@ -82,12 +88,6 @@ The screenshot is ESPHome's built-in web page, which `example.yaml` doesn't turn
 | **Angle**, **Angle live**, **Gain**, **Magnet status**, **Magnitude**, **Tank level live** | Diagnostics for fitting and troubleshooting. The live ones follow the dial within a second |
 
 More on each one: [ESPHome entities](esphome/README.md#entities).
-
-## Option: generic AS5600 module
-
-You can skip the custom board and use a generic AS5600 breakout board, the kind sold for Arduino projects, in a larger printed housing. It clips onto the same dial, and the wiring and ESPHome configuration don't change. Tie the module's DIR pad to VCC and solder the cable straight to its pads. Files, printing and assembly are in [module-cap/](module-cap/README.md).
-
-<img src="module-cap/images/module-cap-exploded.png" alt="Generic module housing: gauge reader, module and cap" width="420">
 
 ## Modifying
 
