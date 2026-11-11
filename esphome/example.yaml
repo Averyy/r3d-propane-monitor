@@ -10,6 +10,9 @@ substitutions:
   # Optional: I²C pins if your board can't use GPIO8 (SDA) and GPIO9 (SCL).
   # propane_sda_pin: GPIO8
   # propane_scl_pin: GPIO9
+  # Optional: your own dial table for Dial type "Custom", {percent, angle} for
+  # each mark (docs/calibration.md, "Measuring your own table").
+  # propane_custom_table: "{5, 37}, {10, 63}, {20, 105}, {30, 134}, {40, 160}, {50, 183}, {60, 200}, {70, 229}, {80, 258}, {90, 296}, {95, 322}"
 
 esphome:
   name: ${name}

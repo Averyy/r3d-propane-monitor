@@ -40,9 +40,9 @@ The standard configuration stays awake and shows a change in the angle within ab
 1. Plug the cable into the board and slide the board into the gauge tip, components towards the dial ([gauge tip → Assembly](../gauge-tip/README.md#assembly)). Don't glue anything yet.
 2. Clip the gauge tip onto the dial.
 3. In Home Assistant, check that:
-   - **Sensor problem** is off and **Magnet status** is 4 (or 6, weak but usually fine) ([troubleshooting](troubleshooting.md#magnet-status));
-   - **Angle** is between about 37° and 322° ([the angle](calibration.md#the-angle));
-   - **Tank level** matches the dial. If it's off by about the same amount at every mark, adjust **Angle offset** ([calibration](calibration.md#in-the-firmware)); no reflashing needed.
+   - **Tank level** shows a percentage and **Magnitude** is above 50 (about 100 with the author's board). **Magnet status** 2 is common with a gauge's weak magnet ([troubleshooting](troubleshooting.md#magnet-status));
+   - **Angle live** is between about 37° and 322° ([the angle](calibration.md#the-angle)). It and **Tank level live** update every second, so use them while fitting; Angle and Tank level take up to 10 seconds;
+   - **Tank level live** matches the dial. If it's off by about the same amount at every mark, adjust **Angle offset** ([calibration](calibration.md#in-the-firmware)), with no reflashing. If the marks are off by different amounts, measure a [Custom table](calibration.md#measuring-your-own-table) and install again.
 
 If any of these is off, see [troubleshooting](troubleshooting.md).
 

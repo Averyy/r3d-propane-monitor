@@ -6,6 +6,16 @@ The printed housing for the sensor board. It clips onto the dial of a Remote Rea
 |---|---|
 | ![Two-piece gauge tip, assembled](images/gauge-tip-2pc-assembled.png) | ![One-piece gauge tip](images/gauge-tip-1pc.png) |
 
+| Printed two-piece on a Jr/Sr Horizontal dial | From the back: the cable plugged into the board |
+|---|---|
+| ![Printed two-piece gauge tip clipped onto a dial](../docs/images/hero.jpg) | ![Back of the gauge tip with the cable plugged into the board](images/gauge-tip-on-dial-cable-end.jpg) |
+
+| An earlier board revision next to the tip | The earlier board on the dial, chip side down |
+|---|---|
+| ![An earlier sensor board next to the gauge tip on a dial](images/gauge-tip-beside-earlier-board.jpg) | ![An earlier sensor board on the dial, chip side down](images/earlier-board-on-dial.jpg) |
+
+The bottom two photos show an earlier board revision, not v4. Its connector pins are in a different order, so wire a v4 board by [its pinout](../README.md#wiring).
+
 ## Files
 
 | File | Version | Piece | Size as printed, X × Y × Z (mm) |
@@ -56,7 +66,7 @@ The board takes a 4-pin JST SH plug (1.00 mm pitch). Any generic Qwiic / STEMMA 
 
 ![Centre section of the two-piece](images/gauge-tip-section.png)
 
-Centre section of the two-piece: tip piece orange, cable piece blue; board, plug and cable pink.
+Centre section of the two-piece: tip piece orange, cable piece blue, and the board with everything plugged into it in pink.
 
 Both versions start the same way:
 

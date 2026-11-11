@@ -50,6 +50,10 @@ api:
 
 wifi:
   reboot_timeout: 0s
+  # Each wake joins the access point and channel saved from the last good
+  # connection, without scanning first; it scans only if that fails. Less radio
+  # time per wake. The saved access point survives power cuts.
+  fast_connect: true
 
 # Sensor power, board pin 2. Declared as a switch so ESPHome checks the pin
 # (not used twice, not a strapping or flash pin). On from boot; only the sleep

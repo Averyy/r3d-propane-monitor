@@ -1,10 +1,10 @@
 # Troubleshooting
 
-The entities named here are the ones the [ESPHome configuration](../esphome/README.md#entities) creates. The angle, magnet status and gain are under Diagnostic on the device's page in Home Assistant.
+The entities named here are the ones the [ESPHome configuration](../esphome/README.md#entities) creates. The angle, magnitude, magnet status and gain are under Diagnostic on the device's page in Home Assistant.
 
-## Sensor problem is on
+## Tank level shows unknown
 
-It turns on when the sensor wasn't found at boot, stopped answering for 30 s, or can't see the magnet properly. The tank level shows unknown meanwhile. Check the magnet status and the device log, then the sections below.
+Tank level shows unknown when the sensor wasn't found at boot, stopped answering for 30 s, or the magnetic field is missing (Magnitude below 50) or too strong. It comes back about 5 s after the sensor is seen again, at the last good reading, and follows the dial from the next median. **Tank level live** comes back as soon as the magnet is seen. It's also unknown for about 10 s after every restart, until the first reading. Check Magnitude and the device log, then the sections below. To be told about it, use a Home Assistant automation on Tank level being unknown for 10 minutes.
 
 ## The sensor isn't found (nothing at 0x36, or the AS5600 is marked failed at boot)
 
@@ -17,23 +17,26 @@ It turns on when the sensor wasn't found at boot, stopped answering for 30 s, or
 
 ## Magnet status
 
+**Magnitude** is the field strength the sensor measures, and it's what tells a missing magnet from a weak one. With the author's board in the gauge tip on a dial it reads about 100; with no magnet, 0 to 4. Below 50 (`propane_magnet_min_magnitude`), Tank level shows unknown. If yours reads below 50 with the sensor clipped on, it isn't seated, or your housing holds the chip farther from the magnet: lower `propane_magnet_min_magnitude` to about half your on-dial reading, as long as that's still well above 4.
+
 ESPHome's `status` value for the AS5600:
 
 | Value | Meaning | What to do |
 |---|---|---|
 | 4 | Magnet detected, field in range | Good |
-| 6 | Magnet detected, field weak | Usually still reads. Check the tip is fully clipped on and seated |
-| 5 | Magnet detected, field too strong | Readings may stick, so Sensor problem turns on. The sensor is closer to the magnet than intended: check the tip and dial |
-| 2 | No magnet detected | Tip not on the dial, or not seated |
+| 6 | Magnet detected, field weak | Fine if Magnitude is above 50 |
+| 5 | Magnet detected, field too strong | Readings may stick, so Tank level shows unknown. The sensor is closer to the magnet than intended: check the tip and dial |
+| 2 | The chip calls the field too weak to count as detected | Common on a gauge: the magnet behind the dial is weak. Fine if Magnitude is above 50 and the angle follows the dial. With the sensor off the dial it stays 2, so check Magnitude |
 | 0 | Nothing, or the read failed | See "The sensor isn't found" |
 
-The **Gain** value (0–128 in this board's 3.3 V mode) is best near the middle of its range. Far from the middle usually means the gap between the sensor and the magnet is off; temperature and an ageing magnet move it too.
+**Gain** (0–128 with a 3.3 V supply) is how hard the chip boosts the signal. At 128, the maximum, it's boosting all it can, which is normal with a gauge's weak magnet as long as Magnitude is above 50.
 
 ## The percentage doesn't match the dial
 
 - Check the dial type: compare the marks printed on your dial with [the table](calibration.md#pick-your-dial-type), and pick it in **Dial type**.
 - Check the tip is fully clipped on and not rotated on the dial.
 - If the percentage falls as the tank fills, the angle runs the wrong way: on a generic module, DIR isn't tied to VCC.
+- Generic module: if Angle live is about 90°, 180° or 270° away from the [table](calibration.md#tables) angle for the mark the pointer is on, the module is turned in its housing: turn it, or set **Angle offset** to cancel the difference ([module-cap/ → Assembly](../module-cap/README.md#assembly)).
 - If it's off by about the same amount at every mark, adjust **Angle offset** ([calibration](calibration.md#in-the-firmware)).
 - A reading stuck at the lowest or highest percentage means the angle is outside the table's range: the dial type is wrong or the tip isn't seated.
 - Angles near 0° or 360° mean the sensor isn't reading the dial's magnet in the expected frame ([the angle](calibration.md#the-angle)).

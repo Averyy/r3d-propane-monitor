@@ -11,7 +11,7 @@ Remote Ready gauges turn a magnet behind the dial as the float moves. A 20 × 10
 
 Free for non-commercial use under CC BY-NC-SA 4.0. Order your own boards and print your own gauge tip. Changed versions must be shared under the same licence, and selling boards or files isn't allowed.
 
-![Sensor board and two-piece gauge tip](docs/images/hero.png)
+![Two-piece gauge tip clipped onto a Jr/Sr Horizontal dial](docs/images/hero.jpg)
 
 ## Status
 
@@ -19,7 +19,15 @@ Free for non-commercial use under CC BY-NC-SA 4.0. Order your own boards and pri
 - The current board, v4, hasn't been built yet. Its files pass the software checks listed in [sensor-board/](sensor-board/README.md#what-has-been-checked), but those don't prove it works.
 - Both gauge tip versions have been printed and worked for the author.
 - The [generic module housing](module-cap/README.md) has been printed and worked well in the author's testing.
-- The ESPHome configuration compiles and passes its checks, but hasn't been run on a v4 board yet. Battery mode hasn't been run on hardware.
+- The ESPHome configuration has run on the earlier board in the two-piece tip, on a gauge on the bench. It read 22.95 %, 53.79 % and 63.98 % with the dial at about 22, 54 and 63 %, and Tank level went to unknown whenever the sensor was pulled off. It hasn't run on a v4 board yet, and battery mode hasn't run on hardware.
+
+## What it reports
+
+<img src="docs/images/esphome-web-page.png" alt="The device's entities: Tank level; Angle offset, Dial type and Restart; Angle, Angle live, Gain, Magnet status, Magnitude and Tank level live" width="480">
+
+**Tank level** is the one to use. It's the median of 10 readings, sent when it changes, and shows unknown when the sensor can't be trusted: off the dial, not answering, or not found. **Dial type** and **Angle offset** are set from Home Assistant. The diagnostics help with fitting and troubleshooting; the live ones follow the dial within a second. Details: [ESPHome entities](esphome/README.md#entities).
+
+The screenshot is ESPHome's built-in web page, which `example.yaml` doesn't turn on. Home Assistant shows the same entities on the device's page.
 
 ## Will it fit my gauge?
 
@@ -48,6 +56,8 @@ The [build guide](docs/build-guide.md) has every step in detail:
 6. Flash ESPHome.
 7. Dry-fit and check the reading before gluing anything.
 8. Seal and refit.
+
+<img src="gauge-tip/images/gauge-tip-on-dial-cable-end.jpg" alt="Back of the gauge tip on a dial, with the cable plugged into the board inside" width="320">
 
 Problems: [troubleshooting](docs/troubleshooting.md).
 

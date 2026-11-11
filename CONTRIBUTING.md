@@ -8,7 +8,7 @@ The most useful contribution is an angle table for a dial type that isn't in [do
 
 ## Report a problem
 
-Open a **Problem report** issue. Include the board revision, gauge tip version, dial type, ESPHome version, whether you use battery mode, and the tank level, angle, magnet status and gain values Home Assistant shows. [Troubleshooting](docs/troubleshooting.md) covers the common cases.
+Open a **Problem report** issue. Include the board revision, gauge tip version, dial type, ESPHome version, whether you use battery mode, and the tank level, angle, magnitude, magnet status and gain values Home Assistant shows. [Troubleshooting](docs/troubleshooting.md) covers the common cases.
 
 ## Change files
 

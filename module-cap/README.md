@@ -12,7 +12,7 @@ An option instead of the custom sensor board and gauge tip: a printed housing fo
 
 ## The module
 
-A common square AS5600 breakout with a 7-pin edge (VCC, OUT, GND, DIR, SCL, SDA, GPO) and four corner holes, for example [this listing](https://www.aliexpress.com/item/1005012634033099.html). The magnet that comes with it isn't needed: the gauge has its own.
+A common square AS5600 breakout with the chip in the middle, seven pads in two rows either side of it (VCC, OUT and GND on one side; DIR, SCL, SDA and GPO on the other) and four corner holes, for example [this listing](https://www.aliexpress.com/item/1005012634033099.html). On that board the chip's power and ground legs, on its pin-1 dot side, face the VCC, OUT and GND row. The magnet that comes with it isn't needed: the gauge has its own.
 
 The housing is drawn for a board of 23.3 × 22.9 × 1.55 mm with Ø3.55 mm corner holes on 16.05 mm centres and the chip in the middle. Check yours against those numbers before printing.
 
@@ -58,14 +58,15 @@ The cable leaves through a Ø5 mm hole, so use a 4-core cable up to about 4.5 mm
 
 ## Assembly
 
-1. Lay the module chip side down in the gauge reader, over the four pins. The chip drops into its own pocket.
-2. Run the cable along the channel to the exit hole at the end.
-3. Fit the cap onto the four pins, clip the reader onto the dial and check the reading as in the [build guide](../docs/build-guide.md#7-dry-fit-and-check-the-reading) before sealing anything.
-4. Seal the joint between cap and reader, and the cable hole, with waterproof, PCB-safe glue.
+1. Turn the module so its **VCC, OUT and GND row faces the cable exit**. That puts the chip the same way round as on the custom board, with its power and ground legs (pin-1 dot side) towards the cable. The module fits over the pins four ways round, and this one matches the [dial tables](../docs/calibration.md#the-angle) with no offset. On a module laid out differently, go by the chip: pin-1 dot side towards the cable exit.
+2. Lay the module chip side down in the gauge reader, over the four pins. The chip drops into its own pocket.
+3. Run the cable along the channel to the exit hole at the end.
+4. Fit the cap onto the four pins, clip the reader onto the dial and check the reading as in the [build guide](../docs/build-guide.md#7-dry-fit-and-check-the-reading) before sealing anything. If Tank level live is far off at every mark, and Angle live is about 90°, 180° or 270° away from the [table](../docs/calibration.md#tables) angle for the mark the pointer is on, the module is turned. Either take the cap off and turn it, or set **Angle offset** to that difference with the opposite sign (−90° if Angle live reads 90° high).
+5. Seal the joint between cap and reader, and the cable hole, with waterproof, PCB-safe glue.
 
 ## Compared with the custom board and gauge tip
 
-- The sensor's Hall plane sits about 7.7 mm above the dial face, against about 5.1 mm in the gauge tip, so the field at the chip is weaker. Check that the magnet status is 4 (or 6) and the gain sits near the middle ([troubleshooting](../docs/troubleshooting.md#magnet-status)).
+- The sensor's Hall plane sits about 7.7 mm above the dial face, against about 5.1 mm in the gauge tip, so the field at the chip is weaker. Check **Magnitude** with the housing on the dial. Below 50, Tank level shows unknown; that suits the gauge tip (about 100); if the housing reads below 50, set `propane_magnet_min_magnitude` to about half its reading ([troubleshooting](../docs/troubleshooting.md#magnet-status)).
 - The housing is larger: 36 × 25 mm against the tip's 25 × 15 mm.
 - The module is held by the four pins and the cap rather than a slide-in slot.
 

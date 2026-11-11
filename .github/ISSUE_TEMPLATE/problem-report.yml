@@ -36,7 +36,7 @@ body:
         - 8" Magnetel
         - 4" Magnetel
         - Drop-In
-        - Default
+        - Custom
         - Not sure
     validations:
       required: true
@@ -61,8 +61,8 @@ body:
     id: readings
     attributes:
       label: Readings in Home Assistant
-      description: Tank level, Sensor problem, Angle, Magnet status and Gain, and what the dial shows.
-      placeholder: "tank level 37 %, no problem, angle 150°, status 4, gain 60, dial shows 40 %"
+      description: Tank level, Angle, Magnitude, Magnet status and Gain, and what the dial shows.
+      placeholder: "tank level 37 %, angle 150°, magnitude 100, status 2, gain 128, dial shows 40 %"
   - type: textarea
     id: what
     attributes:

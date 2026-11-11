@@ -39,17 +39,18 @@ Wire the board as in the [wiring table](../README.md#wiring). If your ESP32-S3 b
 
 | Entity | Shows |
 |---|---|
-| Tank level | Percent full, from the angle and your dial type. Unknown while Sensor problem is on |
-| Sensor problem | On when the sensor wasn't found at boot, stopped answering, or the magnet is missing or too close |
-| Dial type | Which [dial table](../docs/calibration.md#tables) to use. Configuration |
-| Angle offset | Added to the angle before the conversion, −30° to +30° ([calibration](../docs/calibration.md#in-the-firmware)). Configuration |
-| Angle | The magnet's angle in degrees, the median of 10 readings. Diagnostic |
-| Magnet status | The AS5600 status code: 4 is good ([meanings](../docs/troubleshooting.md#magnet-status)). Diagnostic |
+| Tank level | Percent full, from the angle and your dial type. Unknown when the sensor wasn't found at boot, stopped answering for 30 s, or the magnet is missing (Magnitude below 50) or too close ([troubleshooting](../docs/troubleshooting.md#tank-level-shows-unknown)) |
+| Dial type | Which [dial table](../docs/calibration.md#tables) to use, starting as Jr/Sr Horizontal, or Custom. Configuration |
+| Angle offset | Added to the angle before the conversion, −180° to +180°, then wrapped into 0–360° ([calibration](../docs/calibration.md#in-the-firmware)). Configuration |
+| Angle | The magnet's angle in degrees, the median of 10 readings taken with the magnet present. Diagnostic |
+| Angle live | The latest single reading, every second, for fitting the sensor and measuring a Custom table. Unknown while the magnet is missing. Sent only when it moves by more than 0.5°. Diagnostic |
+| Tank level live | Tank level from Angle live, so it follows the dial straight away. Unknown only while the magnet is missing at that moment, so it also comes back as soon as the sensor is refitted. Diagnostic |
+| Magnet status | The AS5600 status code: 4 is ideal, 2 is common with a gauge's weak magnet ([meanings](../docs/troubleshooting.md#magnet-status)). Diagnostic |
 | Gain | The AS5600's automatic gain, 0–128; best near the middle. Diagnostic |
-| Magnitude | Magnetic field strength, raw. Diagnostic, disabled by default |
+| Magnitude | Magnetic field strength: about 100 with the sensor on a dial, 0–4 with no magnet. Below 50, Tank level shows unknown. Diagnostic |
 | Restart | Restarts the device. ESPHome only sets up the sensor at boot, so press it after plugging the sensor in |
 
-The sensor is read every second and the angle is the median of the last 10 readings. It's sent to Home Assistant when it moves by 0.5° or more (about 0.2 %), otherwise every 5 minutes. Dial type and Angle offset are kept across reboots.
+The sensor is read every second and the angle is the median of the last 10 readings, so Angle and Tank level change at most every 10 seconds and ignore a single bad reading. They're sent to Home Assistant when the angle moves by 0.5° or more (about 0.2 %), otherwise every 5 minutes. The live entities skip the median and follow the dial within a second. Dial type and Angle offset are kept across reboots.
 
 ## Settings
 
@@ -60,12 +61,14 @@ Set any of these in your configuration's `substitutions:`.
 | `propane_sda_pin` | `GPIO8` | I²C data, board pin 3 |
 | `propane_scl_pin` | `GPIO9` | I²C clock, board pin 4 |
 | `propane_i2c_frequency` | `100kHz` | Lower it (for example `50kHz`) if readings drop out over a long cable |
+| `propane_magnet_min_magnitude` | `50` | Magnitude below which the magnet counts as missing and Tank level shows unknown. If your sensor reads below 50 on the dial (a housing that sits farther from the magnet), set it to about half your reading |
+| `propane_custom_table` | The Jr/Sr Horizontal table | The Custom dial type's `{percent, angle}` pairs ([measuring your own table](../docs/calibration.md#measuring-your-own-table)) |
 | `propane_sleep_duration` | `8h` | Battery mode: time asleep between readings |
 | `propane_setup_window` | `15min` | Battery mode: time awake after power-on, reset or flashing |
 | `propane_setup_mode_entity` | `input_boolean.propane_monitor_setup_mode` | Battery mode: the Home Assistant helper that keeps the device awake |
 | `propane_sensor_power_gpio` | `7` | Battery mode: the GPIO number that powers the sensor (board pin 2). GPIO1–21, except 3, 19 and 20 |
 
-The sensor is read once a second; the Sensor problem timings and battery mode's waits depend on that, so it isn't a setting.
+The sensor is read once a second; the sensor checks' timings and battery mode's waits depend on that, so it isn't a setting.
 
 **Other I²C devices.** The package has its own I²C bus with the ID `propane_i2c`. To add another sensor, either give it `i2c_id: propane_i2c` (same pins), or add a second bus as a list item:
 
@@ -97,7 +100,7 @@ A sleeping device can't take updates or show live readings for fitting the tip, 
 - **for 15 minutes after power-on, a reset or flashing.** Timed wakes don't count.
 - **while setup mode is on.** Create the helper before you need it: in Home Assistant, Settings → Devices & services → Helpers → Create helper → Toggle, named "Propane monitor setup mode" (entity `input_boolean.propane_monitor_setup_mode`). The device checks it on each wake, so turning it on takes effect at the next wake, up to 8 hours later; power-cycling the device starts its 15-minute window straight away. Turn it off when you're done and the device goes back to sleep.
 
-Power: the sensor draws nothing while the ESP32 sleeps, and each wake takes about 20 seconds on Wi-Fi, so three a day cost only about 2 mAh. What's left is your ESP32-S3 board's own sleep current, which depends on its regulator, LEDs and USB chip: measure it before sizing a battery. If board pin 2 stays on 3.3 V, battery mode still works, but the sensor stays powered and draws about 1.5 mA (36 mAh a day). How the switching works: [firmware notes](../docs/firmware-notes.md#timing-and-power).
+Power: the sensor draws nothing while the ESP32 sleeps. Wi-Fi uses fast connect: each wake joins the access point it used last time without scanning first, and scans only if that fails. Each wake takes about 20 seconds on Wi-Fi, so three a day cost only about 2 mAh. What's left is your ESP32-S3 board's own sleep current, which depends on its regulator, LEDs and USB chip: measure it before sizing a battery. If board pin 2 stays on 3.3 V, battery mode still works, but the sensor stays powered and draws about 1.5 mA (36 mAh a day). How the switching works: [firmware notes](../docs/firmware-notes.md#timing-and-power).
 
 Battery mode compiles but hasn't been run on hardware yet.
 

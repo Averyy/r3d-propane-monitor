@@ -14,7 +14,7 @@ Match the marks printed on your dial.
 | 8" Magnetel | 3 % to 97 % |
 | 4" Magnetel | 5 % to 95 % |
 | Drop-In | 10 % to 94 % |
-| Default | A measured curve, 0 % to 95 % |
+| Custom | Any: your own table, set in the device configuration ([measuring your own table](#measuring-your-own-table)) |
 
 Jr/Sr means the Junior and Senior gauge sizes.
 
@@ -42,29 +42,28 @@ The v4 board in the gauge tip is designed to hold the chip in the same frame, so
 
 Angle in degrees for each printed mark.
 
-| % | Default | Jr/Sr Horizontal | Jr/Sr Vertical | Jr/Sr Fractional | 8" Magnetel | 4" Magnetel | Drop-In |
-|---|---|---|---|---|---|---|---|
-| 0 | 35.288 | | 37 (E) | 37 (E) | | | |
-| 3 | | | | | 37 | | |
-| 5 | 43.374 | 37 | | | 45 | 37 | |
-| 10 | 67.675 | 63 | 57 | | 63 | 63 | 37 |
-| 15 | 89.824 | | | | | | |
-| 20 | 107.753 | 105 | 74 | | 95 | 105 | 68 |
-| 25 | 120.761 | | | 108 (¼) | | | |
-| 30 | 135.043 | 134 | 111 | | 126 | 134 | 99 |
-| 40 | 160.532 | 160 | 148 | | 158 | 160 | 130 |
-| 50 | 181.977 | 183 | 185 | 179 (½) | 189 | 183 | 161 |
-| 60 | 202.28 | 200 | 222 | | 221 | 200 | 192 |
-| 70 | 226.538 | 229 | 259 | | 252 | 229 | 223 |
-| 75 | | | | 250 (¾) | | | |
-| 80 | 253.74 | 258 | 302 | | 274 | 258 | 254 |
-| 90 | 296.586 | 296 | | | 296 | 296 | 285 |
-| 94 | | | | | | | 322 |
-| 95 | 323.964 | 322 | | | 309 | 322 | |
-| 97 | | | | | 322 | | |
-| 100 | | | 322 (F) | 322 (F) | | | |
+| % | Jr/Sr Horizontal | Jr/Sr Vertical | Jr/Sr Fractional | 8" Magnetel | 4" Magnetel | Drop-In |
+|---|---|---|---|---|---|---|
+| 0 | | 37 (E) | 37 (E) | | | |
+| 3 | | | | 37 | | |
+| 5 | 37 | | | 45 | 37 | |
+| 10 | 63 | 57 | | 63 | 63 | 37 |
+| 20 | 105 | 74 | | 95 | 105 | 68 |
+| 25 | | | 108 (¼) | | | |
+| 30 | 134 | 111 | | 126 | 134 | 99 |
+| 40 | 160 | 148 | | 158 | 160 | 130 |
+| 50 | 183 | 185 | 179 (½) | 189 | 183 | 161 |
+| 60 | 200 | 222 | | 221 | 200 | 192 |
+| 70 | 229 | 259 | | 252 | 229 | 223 |
+| 75 | | | 250 (¾) | | | |
+| 80 | 258 | 302 | | 274 | 258 | 254 |
+| 90 | 296 | | | 296 | 296 | 285 |
+| 94 | | | | | | 322 |
+| 95 | 322 | | | 309 | 322 | |
+| 97 | | | | 322 | | |
+| 100 | | 322 (F) | 322 (F) | | | |
 
-Every table except Default runs from 37° at its lowest mark to 322° at its highest; they differ in how the marks are spaced. The tables were measured on a live device, so uneven spacing between marks is real. The 4" Magnetel values are the same as Jr/Sr Horizontal.
+Every table runs from 37° at its lowest mark to 322° at its highest; they differ in how the marks are spaced. The tables were measured on a live device, so uneven spacing between marks is real. The 4" Magnetel values are the same as Jr/Sr Horizontal.
 
 ## Angle to percent
 
@@ -77,13 +76,26 @@ Every table except Default runs from 37° at its lowest mark to 322° at its hig
 
 The [ESPHome configuration](../esphome/README.md) does this conversion on the device, on the angle plus an offset. In Home Assistant:
 
-- **Dial type** picks the table. It starts as Default.
-- **Angle offset** (−30° to +30°) is added to the angle before the conversion, for a tip that sits slightly rotated on the dial. If the percentage reads low at every mark, raise it; if high, lower it. About 3° is 1 % on a Jr/Sr Horizontal dial.
+- **Dial type** picks the table. It starts as Jr/Sr Horizontal. **Custom** uses your own table ([below](#measuring-your-own-table)).
+- **Angle offset** (−180° to +180°) is added to the angle before the conversion, and the result wrapped into 0–360°. It's for a tip that sits slightly rotated on the dial, or a sensor that's turned: a generic module fitted a quarter turn out reads 90° high or low everywhere, and −90° or +90° fixes it. If the percentage reads low at every mark, raise it; if high, lower it. About 3° is 1 % on a Jr/Sr Horizontal dial.
 
 Both are kept across reboots, with no reflashing. The tables above mirror the ones in `esphome/propane-monitor.yaml`.
 
 ## Measuring your own table
 
-With the sensor fitted and the angle offset at 0, note the **Angle** reading (under Diagnostic in Home Assistant) each time the dial pointer sits on a printed mark. Those angle and percent pairs are your table.
+If no table matches your dial, or you want readings that match your own gauge more closely, use the Custom dial type:
 
-To use it, copy `esphome/propane-monitor.yaml` next to your device configuration, add the table to the Tank level lambda and its name to the end of the Dial type options, and include the copy instead of the GitHub package. Please share it too: [CONTRIBUTING](../CONTRIBUTING.md#share-a-dial-table).
+1. Set **Angle offset** to 0.
+2. Each time the dial pointer sits on a mark, note the **Angle live** reading (under Diagnostic in Home Assistant). It updates every second.
+3. In your device configuration, set `propane_custom_table` to those marks as `{percent, angle}` pairs, lowest first, and install it again:
+
+   ```yaml
+   substitutions:
+     propane_custom_table: "{5, 37}, {10, 63}, {20, 105}, {30, 134}, {40, 160}, {50, 183}, {60, 200}, {70, 229}, {80, 258}, {90, 296}, {95, 322}"
+   ```
+
+4. Set **Dial type** to **Custom**, and check **Tank level live** against the dial.
+
+The tank level is interpolated between your marks, as for the other tables. Use any marks your dial has (3 %, 94 %, ¼ as 25, and so on). It needs at least two, with both the percent and the angle rising from each mark to the next; otherwise Tank level shows as unknown and the device log says so. Without the setting, Custom uses the Jr/Sr Horizontal table shown above.
+
+Please share your table too, so it can become a named dial type: [CONTRIBUTING](../CONTRIBUTING.md#share-a-dial-table).

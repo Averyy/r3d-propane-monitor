@@ -12,6 +12,12 @@ substitutions:
   propane_sda_pin: GPIO8
   propane_scl_pin: GPIO9
   propane_i2c_frequency: 100kHz
+  # Tank level shows unknown when the field strength (Magnitude) stays below
+  # this: about 100 with the sensor on a dial, 0-4 with no magnet.
+  propane_magnet_min_magnitude: "50"
+  # The Custom dial type's table: {percent, angle} for each mark, both rising
+  # (docs/calibration.md, "Measuring your own table"). Starts as Jr/Sr Horizontal.
+  propane_custom_table: "{5, 37}, {10, 63}, {20, 105}, {30, 134}, {40, 160}, {50, 183}, {60, 200}, {70, 229}, {80, 258}, {90, 296}, {95, 322}"
 
 esphome:
   min_version: 2026.9.1
@@ -45,6 +51,12 @@ globals:
   - id: propane_last_read_ms
     type: uint32_t
     initial_value: "0"
+  # The latest Magnitude reading, unfiltered. A global, so the angle sensor's
+  # filter can use it: referring to its own Magnitude sub-sensor there would be
+  # a circular dependency.
+  - id: propane_magnitude_raw
+    type: float
+    initial_value: "NAN"
 
 sensor:
   - platform: as5600
@@ -56,11 +68,16 @@ sensor:
     accuracy_decimals: 1
     icon: mdi:gauge
     # Once a second. The median of 10, the Sensor problem timings (30 s, 3 s,
-    # 12 s) and battery mode's waits all assume this; change them together.
+    # 5 s) and battery mode's waits all assume this; change them together.
     update_interval: 1s
     filters:
-      # The AS5600 reports counts (0-4095); the dial tables are in degrees.
-      - lambda: return x * as5600::RAW_TO_DEGREES;
+      # Drop reads taken without the magnet, so they never reach the median:
+      # each update publishes Magnitude just before the angle. The AS5600
+      # reports counts (0-4095); the dial tables are in degrees.
+      - lambda: |-
+          const float magnitude = id(propane_magnitude_raw);
+          if (std::isnan(magnitude) || magnitude < ${propane_magnet_min_magnitude}) return {};
+          return x * as5600::RAW_TO_DEGREES;
       - median:
           window_size: 10
           send_every: 10
@@ -70,7 +87,14 @@ sensor:
           - throttle: 5min
           - delta: 0.5
     on_raw_value:
-      - lambda: id(propane_last_read_ms) = millis();
+      - lambda: |-
+          id(propane_last_read_ms) = millis();
+          // Angle live: every read, unknown while the magnet is missing. Going
+          // to or from unknown re-runs Tank level, so Tank level live follows a
+          // refit at once even if the angle hasn't moved.
+          const float magnitude = id(propane_magnitude_raw);
+          const bool magnet = !std::isnan(magnitude) && magnitude >= ${propane_magnet_min_magnitude};
+          id(propane_angle_live).publish_state(magnet ? x * as5600::RAW_TO_DEGREES : NAN);
     on_value:
       - component.update: propane_tank_level
 
@@ -97,10 +121,13 @@ sensor:
             - throttle: 5min
             - delta: 2
 
+    # Field strength. Sensor problem uses its raw value to tell "no magnet"
+    # from a weak one; STATUS can't on a gauge (see the binary sensor).
     magnitude:
       id: propane_magnitude
       name: Magnitude
-      disabled_by_default: true
+      on_raw_value:
+        - lambda: id(propane_magnitude_raw) = x;
       filters:
         - median:
             window_size: 10
@@ -118,6 +145,11 @@ sensor:
     icon: mdi:propane-tank
     state_class: measurement
     update_interval: never
+    # Recomputed on every live reading too: send changes, otherwise every 5 minutes.
+    filters:
+      - or:
+          - throttle: 5min
+          - delta: 0.05
     lambda: |-
       // Angle (degrees) at each printed mark, per dial type: {percent, angle}.
       // docs/calibration.md mirrors these tables.
@@ -136,11 +168,9 @@ sensor:
       static const Point kDropIn[] = {
           {10, 37}, {20, 68}, {30, 99}, {40, 130}, {50, 161}, {60, 192},
           {70, 223}, {80, 254}, {90, 285}, {94, 322}};
-      static const Point kDefault[] = {
-          {0, 35.288f}, {5, 43.374f}, {10, 67.675f}, {15, 89.824f},
-          {20, 107.753f}, {25, 120.761f}, {30, 135.043f}, {40, 160.532f},
-          {50, 181.977f}, {60, 202.28f}, {70, 226.538f}, {80, 253.74f},
-          {90, 296.586f}, {95, 323.964f}};
+      // Custom: the propane_custom_table substitution from the device
+      // configuration.
+      static const Point kCustom[] = {${propane_custom_table}};
       struct Table { const Point *pts; size_t n; };
       #define PROPANE_TABLE(t) Table{t, sizeof(t) / sizeof(t[0])}
       // Same order as the Dial type options. 4" Magnetel uses the
@@ -149,49 +179,119 @@ sensor:
           PROPANE_TABLE(kHorizontal), PROPANE_TABLE(kVertical),
           PROPANE_TABLE(kFractional), PROPANE_TABLE(kMagnetel8),
           PROPANE_TABLE(kHorizontal), PROPANE_TABLE(kDropIn),
-          PROPANE_TABLE(kDefault)};
+          PROPANE_TABLE(kCustom)};
       #undef PROPANE_TABLE
 
-      // No reading yet: publish nothing. Sensor problem: unknown.
-      if (!id(propane_angle).has_state()) return {};
-      if (id(propane_sensor_problem).state) return NAN;
+      // The selected table. Left empty (n = 0) for an unknown dial type, or a
+      // table without two or more marks with percent and angle both rising
+      // (only a Custom table can be like that).
       const auto index = id(propane_dial_type).active_index();
-      if (!index.has_value() || *index >= sizeof(kTables) / sizeof(kTables[0])) return NAN;
-      const Table &t = kTables[*index];
-      const float angle = id(propane_angle).state + id(propane_angle_offset).state;
-
-      // Clamp to the table's ends; interpolate linearly between marks.
-      if (angle <= t.pts[0].deg) return t.pts[0].pct;
-      if (angle >= t.pts[t.n - 1].deg) return t.pts[t.n - 1].pct;
-      for (size_t i = 1; i < t.n; i++) {
-        const Point &lo = t.pts[i - 1];
-        const Point &hi = t.pts[i];
-        if (angle <= hi.deg) {
-          return lo.pct + (angle - lo.deg) * (hi.pct - lo.pct) / (hi.deg - lo.deg);
+      Table t{nullptr, 0};
+      if (index.has_value() && *index < sizeof(kTables) / sizeof(kTables[0])) {
+        t = kTables[*index];
+        bool rising = t.n >= 2;
+        for (size_t i = 1; i < t.n && rising; i++) {
+          rising = t.pts[i].pct > t.pts[i - 1].pct && t.pts[i].deg > t.pts[i - 1].deg;
+        }
+        if (!rising) {
+          ESP_LOGW("propane", "The dial table needs two or more marks, percent and angle both rising");
+          t = Table{nullptr, 0};
         }
       }
-      return NAN;
+
+      // Percent for one angle reading: unknown (NaN) when not usable;
+      // otherwise clamp to the table's ends and interpolate between marks.
+      const float offset = id(propane_angle_offset).state;
+      auto level = [&](float reading, bool usable) -> float {
+        if (!usable || t.n == 0) return NAN;
+        // Wrap into 0-360 after adding the offset, so a large offset (a sensor
+        // turned on the dial) works across the 0/360 point.
+        float angle = std::fmod(reading + offset, 360.0f);
+        if (angle < 0) angle += 360.0f;
+        if (angle <= t.pts[0].deg) return t.pts[0].pct;
+        if (angle >= t.pts[t.n - 1].deg) return t.pts[t.n - 1].pct;
+        for (size_t i = 1; i < t.n; i++) {
+          const Point &lo = t.pts[i - 1];
+          const Point &hi = t.pts[i];
+          if (angle <= hi.deg) {
+            return lo.pct + (angle - lo.deg) * (hi.pct - lo.pct) / (hi.deg - lo.deg);
+          }
+        }
+        return NAN;
+      };
+
+      // Tank level live: the latest single reading, unknown only while the
+      // magnet is missing right now, so it follows the sensor being refitted.
+      if (id(propane_angle_live).has_state()) {
+        const float magnitude = id(propane_magnitude_raw);
+        const bool magnet_now = !std::isnan(magnitude) && magnitude >= ${propane_magnet_min_magnitude};
+        id(propane_tank_level_live).publish_state(level(id(propane_angle_live).state, magnet_now));
+      }
+      // Tank level: the median angle, unknown while there's a sensor problem.
+      // Before the first median: unknown if there's already a problem (so a
+      // battery wake without the magnet doesn't leave the last reading
+      // showing), otherwise nothing yet.
+      if (id(propane_sensor_problem).state) return NAN;
+      if (!id(propane_angle).has_state()) return {};
+      return level(id(propane_angle).state, true);
+
+  # Live readings for setting up and calibrating: every read, no median. Sent
+  # only when they change, so nothing goes out while the dial is still.
+  - platform: template
+    id: propane_angle_live
+    name: Angle live
+    entity_category: diagnostic
+    unit_of_measurement: "°"
+    accuracy_decimals: 1
+    icon: mdi:gauge
+    update_interval: never
+    # 0.5° is about 6 counts: above this sensor's few counts of noise at rest.
+    filters:
+      - delta: 0.5
+    on_value:
+      - component.update: propane_tank_level
+
+  # Set by the Tank level lambda from Angle live.
+  - platform: template
+    id: propane_tank_level_live
+    name: Tank level live
+    entity_category: diagnostic
+    unit_of_measurement: "%"
+    accuracy_decimals: 1
+    icon: mdi:propane-tank
+    update_interval: never
+    filters:
+      - delta: 0.05
 
 binary_sensor:
   - platform: template
     id: propane_sensor_problem
     name: Sensor problem
-    device_class: problem
+    # Not sent to Home Assistant: while it's on, Tank level shows unknown.
+    internal: true
     lambda: |-
       // Not found at boot: the as5600 component gives up until a restart.
       if (id(propane_as5600).is_failed()) return true;
       // No angle read for 30 s, counted from boot until the first one: the
       // sensor stopped answering. Unsigned subtraction survives millis() wrapping.
       if (millis() - id(propane_last_read_ms) > 30000) return true;
-      // Magnet missing (MD clear), too strong (MH set) or no reply (0).
+      // No magnet: field strength below propane_magnet_min_magnitude. The
+      // magnet behind a dial is weak, so STATUS often says "not detected" (2)
+      // while the angle follows the dial fine; the magnitude tells them apart
+      // (about 100 on a dial, 0-4 with none). A failed read also gives 0.
+      const float magnitude = id(propane_magnitude_raw);
+      if (!std::isnan(magnitude) && magnitude < ${propane_magnet_min_magnitude}) return true;
+      // Too strong (MH set): readings may stick.
       const float status = id(propane_magnet_status).get_raw_state();
-      if (std::isnan(status)) return false;
-      const int s = static_cast<int>(status);
-      return (s & 4) == 0 || (s & 1) != 0;
+      return !std::isnan(status) && (static_cast<int>(status) & 1) != 0;
     filters:
-      # Ignore a single bad read; clear only after a fresh angle median.
-      - delayed_on: 3s
-      - delayed_off: 12s
+      # On after 3 s (ignore a brief dip), off after 5 s (don't flicker while
+      # the sensor is seated). One filter for both, so a change cancels the
+      # opposite pending one. Reads without the magnet never reach the angle
+      # median, so there's no bad data to wait out when it clears.
+      - delayed_on_off:
+          time_on: 3s
+          time_off: 5s
     on_state:
       - component.update: propane_tank_level
 
@@ -210,8 +310,8 @@ select:
       - '8" Magnetel'
       - '4" Magnetel'
       - Drop-In
-      - Default
-    initial_option: Default
+      - Custom
+    initial_option: Jr/Sr Horizontal
     optimistic: true
     restore_value: true
     on_value:
@@ -225,8 +325,10 @@ number:
     icon: mdi:angle-acute
     unit_of_measurement: "°"
     mode: box
-    min_value: -30
-    max_value: 30
+    # Up to half a turn either way, so it also corrects a sensor that's
+    # turned a quarter or half turn on the dial.
+    min_value: -180
+    max_value: 180
     step: 0.5
     initial_value: 0
     optimistic: true
