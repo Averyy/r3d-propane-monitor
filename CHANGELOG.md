@@ -40,7 +40,7 @@ Gauge reader and cap for a generic 23 × 23 mm AS5600 module, located by four pi
 
 ## ESPHome configuration
 
-### v1.0 (unreleased)
+### v1.0 (2026-11-10)
 
 - `propane-monitor.yaml` package: AS5600 on I²C (GPIO8/GPIO9, 100 kHz), angle as the median of 10 readings, tank level from the dial tables, shown as unknown when the sensor isn't found, stops reading for 30 s, or the magnet is missing (by field strength) or too strong.
 - Dial type and angle offset set from Home Assistant and kept across reboots. Dial type starts as Jr/Sr Horizontal.
