@@ -11,8 +11,6 @@ A small sensor that clips onto the dial of a Remote Ready (R3D) propane tank gau
 
 Remote Ready gauges turn a magnet behind the dial as the float moves. A 20 × 10 mm board with an AS5600 magnetic angle sensor sits in a printed gauge tip that clips onto the dial. The sensor reads the magnet's angle and sends it over I²C to the ESP32-S3, and ESPHome turns the angle into a percentage using a table for your dial type.
 
-The current board, v4, hasn't been built yet. An earlier revision with the same sensor was built and worked, and the ESPHome configuration has run on it. What's been tested for each part is in the [changelog](CHANGELOG.md).
-
 Free for non-commercial use under CC BY-NC-SA 4.0. Order your own boards and print your own gauge tip. Changed versions must be shared under the same licence, and selling boards or files isn't allowed.
 
 ## Will it fit my gauge?
