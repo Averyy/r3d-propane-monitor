@@ -1,1 +1,8 @@
 blank_issues_enabled: false
+contact_links:
+  - name: Question
+    url: https://github.com/Averyy/r3d-propane-monitor/discussions/categories/q-a
+    about: Ask about building, fitting or the ESPHome configuration.
+  - name: Idea or change to the board or housing
+    url: https://github.com/Averyy/r3d-propane-monitor/discussions/categories/ideas
+    about: Suggest a change. The CAD sources aren't published, so describe it there.

@@ -2,6 +2,10 @@
 
 Thanks for helping. Issues and pull requests are welcome.
 
+## Ask a question
+
+Ask in [Discussions Q&A](https://github.com/Averyy/r3d-propane-monitor/discussions/categories/q-a). Built one? Post it in [Show and tell](https://github.com/Averyy/r3d-propane-monitor/discussions/categories/show-and-tell).
+
 ## Share a dial table
 
 The most useful contribution is an angle table for a dial type that isn't in [docs/calibration.md](docs/calibration.md), or a corrected one. Open a **Dial table** issue and give the printed marks, the angle the sensor reported at each mark, and a photo of the dial face if you can.
@@ -13,7 +17,7 @@ Open a **Problem report** issue. Include the board revision, gauge tip version, 
 ## Change files
 
 - Docs and the ESPHome configuration: send a pull request. For `esphome/` changes, run the checks in [esphome/README.md](esphome/README.md#changing-the-configuration); CI runs them too. A dial table change goes in both `esphome/propane-monitor.yaml` and `docs/calibration.md`.
-- The board's EasyEDA project and the CAD sources of the gauge tip and module housing aren't published, so for board or housing changes, open an issue describing the change.
+- The board's EasyEDA project and the CAD sources of the gauge tip and module housing aren't published, so for board or housing changes, describe the change in [Discussions Ideas](https://github.com/Averyy/r3d-propane-monitor/discussions/categories/ideas).
 - Wiring is documented by pin number only (1 GND, 2 3V3, 3 SDA, 4 SCL), never by wire colour.
 
 ## Licence of contributions
