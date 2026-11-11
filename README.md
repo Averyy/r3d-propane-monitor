@@ -13,6 +13,17 @@ Remote Ready gauges turn a magnet behind the dial as the float moves. A 20 × 10
 
 Free for non-commercial use under CC BY-NC-SA 4.0. Order your own boards and print your own gauge tip. Changed versions must be shared under the same licence, and selling boards or files isn't allowed.
 
+## Repository
+
+| Folder | Contents |
+|---|---|
+| [docs/](docs/README.md) | Build guide, dial types and calibration, troubleshooting, firmware notes |
+| [sensor-board/](sensor-board/README.md) | Specifications, JLCPCB ordering files and cost, schematic, 3D model, pictures |
+| [gauge-tip/](gauge-tip/README.md) | STL files for both versions, printing, assembly |
+| [module-cap/](module-cap/README.md) | Option: housing for a generic AS5600 module, STLs, wiring, assembly |
+| [esphome/](esphome/README.md) | ESPHome configuration (GPLv3): install, entities, settings, battery mode |
+| [CHANGELOG.md](CHANGELOG.md) | Board, gauge tip, module housing and configuration revisions |
+
 ## ESPHome Dashboard
 
 <img src="docs/images/esphome-web-page.png" alt="The device's entities: Tank level; Angle offset, Dial type and Restart; Angle, Angle live, Gain, Magnet status, Magnitude and Tank level live" width="480">
@@ -84,17 +95,6 @@ If something's off, see [troubleshooting](docs/troubleshooting.md).
 - It doesn't have the board's EasyEDA project or the CAD sources for the gauge tip and module housing.
 - To change the ESPHome configuration, see [esphome/](esphome/README.md#changing-the-configuration) and the [firmware notes](docs/firmware-notes.md).
 - To share a table for a new dial type, or send other changes, see [CONTRIBUTING.md](CONTRIBUTING.md).
-
-## Repository
-
-| Folder | Contents |
-|---|---|
-| [docs/](docs/README.md) | Build guide, dial types and calibration, troubleshooting, firmware notes |
-| [sensor-board/](sensor-board/README.md) | Specifications, JLCPCB ordering files and cost, schematic, 3D model, pictures |
-| [gauge-tip/](gauge-tip/README.md) | STL files for both versions, printing, assembly |
-| [module-cap/](module-cap/README.md) | Option: housing for a generic AS5600 module, STLs, wiring, assembly |
-| [esphome/](esphome/README.md) | ESPHome configuration (GPLv3): install, entities, settings, battery mode |
-| [CHANGELOG.md](CHANGELOG.md) | Board, gauge tip, module housing and configuration revisions |
 
 ## Legal
 
