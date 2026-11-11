@@ -13,6 +13,20 @@ Remote Ready gauges turn a magnet behind the dial as the float moves. A 20 × 10
 
 Free for non-commercial use under CC BY-NC-SA 4.0. Order your own boards and print your own gauge tip. Changed versions must be shared under the same licence, and selling boards or files isn't allowed.
 
+## ESPHome Dashboard
+
+<img src="docs/images/esphome-web-page.png" alt="The device's entities: Tank level; Angle offset, Dial type and Restart; Angle, Angle live, Gain, Magnet status, Magnitude and Tank level live" width="480">
+
+The screenshot is ESPHome's built-in web page, which `example.yaml` doesn't turn on. Home Assistant shows the same entities on the device's page.
+
+| Entity | What it's for |
+|---|---|
+| **Tank level** | The one to use. It's the median of 10 readings, sent when it changes and at least every 5 minutes. It shows unknown when the sensor can't be trusted: off the dial, not answering, or not found |
+| **Dial type**, **Angle offset** | Settings, changed from Home Assistant |
+| **Angle**, **Angle live**, **Gain**, **Magnet status**, **Magnitude**, **Tank level live** | Diagnostics for fitting and troubleshooting. The live ones follow the dial within a second |
+
+More on each one: [ESPHome entities](esphome/README.md#entities).
+
 ## Will it fit my gauge?
 
 You need a Remote Ready (R3D) dial, because that's what the gauge tip clips onto. The angle tables cover these dials:
@@ -63,20 +77,6 @@ If something's off, see [troubleshooting](docs/troubleshooting.md).
 - The board has its own 4.7 kΩ pull-ups on SDA and SCL, so the ESP32-S3 side doesn't need any. Run the bus at 100 kHz or less.
 - Battery builds wire board pin 2 to GPIO7 instead of 3.3 V, so the ESP32-S3 can switch the sensor off while it sleeps ([battery mode](esphome/README.md#battery-mode)).
 - Wire by pin number. Cable colours vary between suppliers and don't tell you which pin is which. The underside of the board is labelled SCL, SDA, 3V3 and GND next to the connector.
-
-## What it reports
-
-<img src="docs/images/esphome-web-page.png" alt="The device's entities: Tank level; Angle offset, Dial type and Restart; Angle, Angle live, Gain, Magnet status, Magnitude and Tank level live" width="480">
-
-The screenshot is ESPHome's built-in web page, which `example.yaml` doesn't turn on. Home Assistant shows the same entities on the device's page.
-
-| Entity | What it's for |
-|---|---|
-| **Tank level** | The one to use. It's the median of 10 readings, sent when it changes and at least every 5 minutes. It shows unknown when the sensor can't be trusted: off the dial, not answering, or not found |
-| **Dial type**, **Angle offset** | Settings, changed from Home Assistant |
-| **Angle**, **Angle live**, **Gain**, **Magnet status**, **Magnitude**, **Tank level live** | Diagnostics for fitting and troubleshooting. The live ones follow the dial within a second |
-
-More on each one: [ESPHome entities](esphome/README.md#entities).
 
 ## Modifying
 
