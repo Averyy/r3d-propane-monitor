@@ -10,6 +10,10 @@ The Custom dial type's table comes from the propane_custom_table substitution. I
 tested with the package's default, which must be the Jr/Sr Horizontal table, and with
 unusable tables, which must give unknown (NaN).
 
+It also runs the angle sensor's two filter lambdas around a copy of ESPHome's median,
+checking that reads split across 0/360 (a sensor turned on the dial) don't average to
+about 180, and that reads without the magnet are dropped.
+
 Needs Python 3.10+ and a C++20 compiler (c++, g++ or clang++). Standard library only:
     python3 esphome/tests/tank_level_test.py
 """
@@ -147,6 +151,65 @@ int main(int argc, char **argv) {
 }
 """
 
+# The angle sensor's filters around ESPHome's median: the first lambda (drops reads
+# without the magnet, keeps reads continuous across 0/360), the median of 10 as
+# ESPHome computes it (even window: mean of the two middle values) and the lambda
+# that wraps the result back into 0-360.
+ANGLE_HARNESS = r"""
+#include <algorithm>
+#include <cmath>
+#include <cstdio>
+#include <optional>
+#include <vector>
+namespace as5600 { constexpr float RAW_TO_DEGREES = 360.0f / 4096.0f; }
+static float magnitude_g = 100;
+static float &id_propane_magnitude_raw = magnitude_g;
+#define id(x) id_##x
+static std::optional<float> pre(float x) {
+#include "pre.inc"
+}
+static std::optional<float> post(float x) {
+#include "post.inc"
+}
+static std::vector<float> window;
+// Feed raw counts; return the published angle once 10 have reached the median.
+static std::optional<float> feed(int count) {
+  auto v = pre(static_cast<float>(count));
+  if (!v) return {};
+  window.push_back(*v);
+  if (window.size() < 10) return {};
+  std::vector<float> w = window;
+  window.clear();
+  std::sort(w.begin(), w.end());
+  return post((w[4] + w[5]) / 2.0f);
+}
+static int fails = 0;
+static void expect(const char *what, std::initializer_list<int> counts, float want) {
+  std::optional<float> got;
+  for (int c : counts) got = feed(c);
+  // Distance around the circle, so 359.95 vs 0.0 counts as close.
+  float d = got ? std::fabs(std::fmod(*got - want + 540.0f, 360.0f) - 180.0f) : 999;
+  if (!got || d > 0.2f || *got < 0 || *got >= 360) {
+    printf("%s: want %.2f, got %s%.3f\n", what, want, got ? "" : "nothing ", got ? *got : 0.f);
+    fails++;
+  }
+}
+int main() {
+  expect("mid-dial", {2000, 2001, 1999, 2000, 2002, 1998, 2000, 2001, 1999, 2000}, 2000 * 360.0f / 4096);
+  // A turned sensor with a dial mark at raw 0/360: reads split 5/5 across it.
+  expect("split across 0/360", {4095, 0, 4095, 1, 4094, 0, 4095, 1, 4094, 2}, 0.0f);
+  expect("just below 360", {4090, 4091, 4090, 4092, 4091, 4090, 4091, 4092, 4090, 4091}, 4091 * 360.0f / 4096);
+  // Back to mid-dial after the seam: unwrapped values must come back into 0-360.
+  expect("mid-dial again", {1000, 1001, 999, 1000, 1000, 1001, 999, 1000, 1000, 1000}, 1000 * 360.0f / 4096);
+  // Reads without the magnet never reach the median.
+  magnitude_g = 0;
+  for (int i = 0; i < 20; i++) if (pre(3000).has_value()) { puts("no magnet: read should be dropped"); fails++; break; }
+  magnitude_g = 100;
+  printf("angle filter: %d failures\n", fails);
+  return fails ? 1 : 0;
+}
+"""
+
 # Custom tables the lambda must refuse: falling angle, one mark, percent not rising.
 BAD_CUSTOM = ["{5, 37}, {10, 30}", "{5, 37}", "{5, 37}, {5, 60}", "{10, 60}, {5, 70}"]
 
@@ -205,6 +268,18 @@ def reference(angle, points):
     raise AssertionError("unsorted table")
 
 
+def angle_filters(text, mag_min):
+    """The angle sensor's filter lambdas before and after its median."""
+    block = re.search(r"id: propane_angle\n(?:.*\n)*?    filters:\n((?:      .*\n|\s*\n)+?)    on_raw_value:", text)
+    if not block:
+        sys.exit("Angle sensor filters not found in propane-monitor.yaml")
+    lambdas = re.findall(r"      - lambda: \|-\n((?:          .*\n)+)", block.group(1))
+    if len(lambdas) != 2 or "median:" not in block.group(1):
+        sys.exit("Expected a lambda, the median, then a lambda in the angle sensor's filters")
+    pre, post = ("".join(line[10:] + "\n" for line in body.rstrip().split("\n")) for body in lambdas)
+    return pre.replace(MAG_PLACEHOLDER, str(mag_min)), post
+
+
 def build(compiler, tmp, name, body, mag_min):
     """Compile the harness around one version of the lambda; return the binary's path."""
     folder = tmp / name
@@ -260,6 +335,15 @@ def main():
                 print(f"Custom table {table!r}: should give unknown at every angle")
                 failed = True
         print(f"{len(BAD_CUSTOM)} unusable Custom tables checked")
+        pre, post = angle_filters(YAML.read_text(encoding="utf-8"), mag_min)
+        folder = tmp / "angle"
+        folder.mkdir()
+        (folder / "pre.inc").write_text(pre)
+        (folder / "post.inc").write_text(post)
+        (folder / "harness.cpp").write_text(ANGLE_HARNESS)
+        subprocess.run([compiler, "-std=c++20", "-Wall", "-Wextra", "-Werror", "-o", str(folder / "harness"),
+                        str(folder / "harness.cpp")], check=True)
+        failed |= subprocess.run([str(folder / "harness")]).returncode != 0
     sys.exit(1 if failed else 0)
 
 

@@ -44,6 +44,6 @@ wifi:
 captive_portal:
 
 packages:
-  propane_monitor: github://Averyy/r3d-propane-monitor/esphome/propane-monitor.yaml@v1.0
+  propane_monitor: github://Averyy/r3d-propane-monitor/esphome/propane-monitor.yaml@v1.0.1
   # Battery builds: also add this line (see esphome/README.md first).
-  # propane_monitor_battery: github://Averyy/r3d-propane-monitor/esphome/propane-monitor-battery.yaml@v1.0
+  # propane_monitor_battery: github://Averyy/r3d-propane-monitor/esphome/propane-monitor-battery.yaml@v1.0.1

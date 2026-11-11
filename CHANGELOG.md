@@ -1,6 +1,6 @@
 # Changelog
 
-Release tags start at v1.0 and are numbered separately from the board and gauge tip revisions. v1.0, the first release, has sensor board v4, two-piece gauge tip v2, one-piece gauge tip v1, the generic module housing and the first ESPHome configuration.
+Release tags start at v1.0 and are numbered separately from the board and gauge tip revisions. v1.0, the first release, has sensor board v4, two-piece gauge tip v2, one-piece gauge tip v1, the generic module housing and the first ESPHome configuration. v1.0.1 changes only the ESPHome configuration.
 
 ## Sensor board
 
@@ -39,6 +39,11 @@ Same outside shape and length as the assembled two-piece, with an open well behi
 Gauge reader and cap for a generic 23 × 23 mm AS5600 module, located by four pins. The module sits chip side down; the cable wires are soldered to its pads and DIR is tied to VCC. Printed and worked well in the author's testing.
 
 ## ESPHome configuration
+
+### v1.0.1 (2026-11-10)
+
+- Fixed: with a large Angle offset (a sensor turned on the dial), a mark could sit at the sensor's 0°/360° point and the median of readings either side of it came out near 180°, giving a wrong Tank level. Readings now stay continuous across that point before the median and are wrapped back after it.
+- Build guide: restart the device after plugging the sensor in, since ESPHome only finds it at boot.
 
 ### v1.0 (2026-11-10)
 

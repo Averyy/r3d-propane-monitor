@@ -67,7 +67,7 @@ You can skip the custom board and use a generic AS5600 breakout board, the kind 
 
 ## Build
 
-Follow the [build guide](docs/build-guide.md). The short version: order the boards, print the gauge tip, wire the board to the ESP32-S3 as in the table below and flash ESPHome. Then plug the cable into the board, slide the board into the tip and clip it onto the dial with no glue yet. Check the reading in Home Assistant against the dial, and seal the tip only once it's right. The board can't come out after that.
+Follow the [build guide](docs/build-guide.md). The short version: order the boards, print the gauge tip, wire the board to the ESP32-S3 as in the table below and flash ESPHome. Then plug the cable into the board, slide the board into the tip, clip it onto the dial with no glue yet, and restart the device so ESPHome finds the sensor. Check the reading in Home Assistant against the dial, and seal the tip only once it's right. The board can't come out after that.
 
 | Printed two-piece tip on a Jr/Sr Horizontal dial | From the back: the cable plugged into the board |
 |---|---|

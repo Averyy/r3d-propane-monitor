@@ -74,14 +74,29 @@ sensor:
       # Drop reads taken without the magnet, so they never reach the median:
       # each update publishes Magnitude just before the angle. The AS5600
       # reports counts (0-4095); the dial tables are in degrees.
+      # Then keep consecutive reads continuous across 0/360 (359.9 then 0.1
+      # becomes 360.1): a sensor turned on the dial can put a mark at that
+      # point, and a median of reads split across it would land near 180.
       - lambda: |-
           const float magnitude = id(propane_magnitude_raw);
           if (std::isnan(magnitude) || magnitude < ${propane_magnet_min_magnitude}) return {};
-          return x * as5600::RAW_TO_DEGREES;
+          float angle = x * as5600::RAW_TO_DEGREES;
+          static float previous = NAN;
+          if (!std::isnan(previous)) {
+            while (angle - previous > 180.0f) angle -= 360.0f;
+            while (angle - previous < -180.0f) angle += 360.0f;
+          }
+          previous = angle;
+          return angle;
       - median:
           window_size: 10
           send_every: 10
           send_first_at: 10
+      # Back into 0-360.
+      - lambda: |-
+          float angle = std::fmod(x, 360.0f);
+          if (angle < 0) angle += 360.0f;
+          return angle;
       # Report a real change straight away, otherwise every 5 minutes.
       - or:
           - throttle: 5min

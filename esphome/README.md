@@ -21,7 +21,7 @@ You need Home Assistant with the ESPHome Device Builder add-on, or the [ESPHome 
 
    ```yaml
    packages:
-     propane_monitor: github://Averyy/r3d-propane-monitor/esphome/propane-monitor.yaml@v1.0
+     propane_monitor: github://Averyy/r3d-propane-monitor/esphome/propane-monitor.yaml@v1.0.1
    ```
 
    If ESPHome lists your exact board, put its ID in `esp32: board:`; otherwise `esp32-s3-devkitc-1` works for most ESP32-S3 boards.
@@ -89,8 +89,8 @@ Then add the second package under the first:
 
 ```yaml
 packages:
-  propane_monitor: github://Averyy/r3d-propane-monitor/esphome/propane-monitor.yaml@v1.0
-  propane_monitor_battery: github://Averyy/r3d-propane-monitor/esphome/propane-monitor-battery.yaml@v1.0
+  propane_monitor: github://Averyy/r3d-propane-monitor/esphome/propane-monitor.yaml@v1.0.1
+  propane_monitor_battery: github://Averyy/r3d-propane-monitor/esphome/propane-monitor-battery.yaml@v1.0.1
 ```
 
 The device then wakes every 8 hours, takes 10 readings a second apart, sends the median to Home Assistant and goes back to deep sleep. It waits up to a minute for Home Assistant on each wake; without it, it sleeps anyway. While it sleeps, Home Assistant keeps showing the last readings. If the entities go unavailable, the device didn't go to sleep cleanly: it lost Wi-Fi, lost power or crashed.
@@ -106,7 +106,7 @@ Battery mode compiles but hasn't been run on hardware yet.
 
 ## Updating
 
-`@v1.0` pins the package to a release, so your device only changes when you change that tag and install again. Releases are listed in the [changelog](../CHANGELOG.md).
+`@v1.0.1` pins the package to a release, so your device only changes when you change that tag and install again. Releases are listed in the [changelog](../CHANGELOG.md).
 
 ## Changing the configuration
 
