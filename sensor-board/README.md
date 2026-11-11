@@ -28,12 +28,16 @@ Copper layout, top layer red and bottom layer (ground) blue:
 
 ## Ordering
 
-The files are set up for JLCPCB's Economic PCBA service, parts on the top side only. Five boards is JLCPCB's minimum order.
+The files are set up for JLCPCB's Economic PCBA service, parts on the top side only. Five boards is JLCPCB's minimum order. Create a JLCPCB account and order through their desktop app (JLCONE): it's cheaper than the website and comes with extra coupons.
 
-1. Upload `fabrication/propane-gauge-sensor-v4-gerber.zip`. Choose 2 layers, FR-4, 1.6 mm.
-2. The board has its own tooling holes, so choose "Added by Customer".
-3. Turn on PCB Assembly, choose Economic and top side, then upload `fabrication/propane-gauge-sensor-v4-bom.csv` and `fabrication/propane-gauge-sensor-v4-cpl.csv`.
-4. In the placement preview, check U1's pin 1 and CN1's position and rotation against [the top view](images/board-3d-top.png): U1's pin-1 dot is at the corner nearest R2 and the connector's opening faces the board edge. Rotation hasn't been confirmed against JLC's preview.
+1. Upload `fabrication/propane-gauge-sensor-v4-gerber.zip`. JLCPCB should detect a 2-layer board of 20 × 10 mm. Choose FR-4, 1.6 mm.
+2. Set Surface Finish to HASL (with lead) or LeadFree HASL. The form can default to OSP, which Economic PCBA doesn't support. Economic then stays greyed out ("The PCB specs you chose are not supported for Economic PCBA"), and JLCPCB falls back to Standard, which enlarges the board to 70 × 70 mm with edge rails. ENIG also works but costs more. Keep the colour green: other colours narrow the choices ([Economic PCBA specs](https://jlcpcb.com/capabilities/pcb-assembly-capabilities)).
+3. Turn on PCB Assembly and choose Economic and top side. The Tooling holes option only appears once Economic is selected; with Standard you see Edge Rails/Fiducials in its place. The board has its own tooling holes, so choose "Added by Customer". If you pick "Added by JLCPCB" by mistake, the order still works and JLCPCB adds holes of its own.
+4. Upload `fabrication/propane-gauge-sensor-v4-bom.csv` and `fabrication/propane-gauge-sensor-v4-cpl.csv`.
+5. In the placement preview, check U1's pin 1 and CN1's position and rotation against [the top view](images/board-3d-top.png): U1's pin-1 dot is at the corner nearest R2 and the connector's opening faces the board edge. Rotation hasn't been confirmed against JLC's preview.
+6. For shipping, open the list next to the courier (UPS by default) and choose Global Standard Direct Line if it's offered for your address. It costs about US$5–10 instead of about US$25.
+
+The boards come without a cable. You also need a Qwiic / STEMMA QT cable ([build guide → Get a cable](../docs/build-guide.md#4-get-a-cable)).
 
 | Ref | Part | LCSC |
 |---|---|---|
@@ -46,11 +50,11 @@ C499458 is the older ams order code. If it's unavailable, use C55240803 (AS5600-
 
 ### Cost
 
-About **US$25 for 5 assembled boards** (US$5 each), before shipping and taxes. Your quote will differ; JLCPCB shows the exact price before you pay.
+About **US$25 for 5 assembled boards** (US$5 each) at desktop-app prices, before shipping and taxes. Your quote will differ; JLCPCB shows the exact price before you pay. Shipping is about US$5–10 with Global Standard Direct Line (step 6 above).
 
 | Item | US$ | Basis |
 |---|---|---|
-| 5 bare boards | 2.00 | JLCPCB's advertised 2-layer starting price |
+| 5 bare boards | 2.00 | JLCPCB desktop-app price; US$4.00 on the website (quoted 2026-11-11) |
 | Economic PCBA setup + stencil | 9.71 | 8.18 + 1.53 |
 | Extended parts (U1, CN1) | 6.14 | 2 × 3.07 loading fee |
 | Assembly, 20 joints per board | 0.16 | 100 × 0.0016 |

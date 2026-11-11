@@ -44,7 +44,8 @@ ESPHome's `status` value for the AS5600:
 ## Readings drop out over a long cable
 
 - Lower the I²C speed: set the `propane_i2c_frequency` substitution to `50kHz`. The configuration uses 100 kHz, the recommended maximum over a cable.
-- The board has 4.7 kΩ pull-ups, and the configuration turns the ESP32's internal ones off. If your ESP32 board adds its own, the combined value is lower; check it's within what your ESP32 pins can sink.
+- The board has 4.7 kΩ pull-ups, and the configuration turns the ESP32's internal ones off. If your ESP32 board adds its own, the combined value is lower. Keep it at 1 kΩ or more: the sensor and the ESP32 both have to pull that current down to a low.
+- Check the cable isn't longer than the bus allows, and the options for longer runs: [build guide → How long can the cable be?](build-guide.md#how-long-can-the-cable-be)
 
 ## Battery mode
 
